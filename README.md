@@ -26,7 +26,9 @@ The server exposes three tools over the Model Context Protocol's **Streamable HT
 ```
 iwoca-poc/
   src/
-    server.ts                    # Fastify + MCP Streamable HTTP transport
+    mcp.ts                       # Shared MCP server factory + tool registration
+    server.ts                    # HTTP entry point (Streamable HTTP, for ChatGPT)
+    stdio.ts                     # stdio entry point (for the MCP Inspector)
     database.ts                  # SQLite schema and connection
     validation.ts                # Zod schemas + error formatter
     tools/
@@ -58,6 +60,34 @@ The server listens on `http://0.0.0.0:3000` by default. Environment variables:
 | `HOST` | `0.0.0.0` | Bind address. |
 | `IWOCA_DB_PATH` | `data/iwoca.sqlite` | SQLite file path (parent dir auto-created). |
 | `LOG_LEVEL` | `info` | Fastify log level. |
+
+## Test it with the MCP Inspector (recommended)
+
+The fastest way to exercise the tools — no ChatGPT account or public URL needed.
+The [MCP Inspector](https://github.com/modelcontextprotocol/inspector) is a local
+web UI that connects to the server and lets you call each tool by hand.
+
+```bash
+npm install
+npm run inspector
+```
+
+`npm run inspector` builds the project and launches the Inspector pointed at the
+**stdio** entry point (`node dist/stdio.js`) — it spawns the server for you, so
+there's nothing else to start. The command prints a URL (with a pre-filled auth
+token); open it in your browser, click **Connect**, then walk the flow:
+
+1. Open the **Tools** tab and click **List Tools** — you should see
+   `draft_application`, `submit_application`, `get_application_status`.
+2. Run **`draft_application`** with the applicant fields → copy the returned
+   `draft_id`.
+3. Run **`submit_application`** with that `draft_id` and `confirmed: true` →
+   note the `IW-#####` reference and the secure upload URL.
+4. Run **`get_application_status`** with that reference to see the status (and,
+   after ~30s between checks, the automatic progression).
+
+> Prefer a manual stdio session without the UI? `npm run dev:stdio` runs the
+> stdio server directly so you can pipe newline-delimited JSON-RPC into it.
 
 ### Endpoints
 
