@@ -12,6 +12,16 @@ The server exposes three tools over the Model Context Protocol's **Streamable HT
 
 > ⚠️ This is a **proof of concept**. It performs no underwriting, KYC, AML, credit, document, or CRM integration. The upload URL is a placeholder on `demo.iwoca.app`.
 
+## ChatGPT demo (visual walkthrough)
+
+A self-contained browser demo shows what the **product experience** should look like inside ChatGPT — conversational application, inline iwoca widgets, and status tracking. No server or API keys required.
+
+```bash
+npm run demo
+```
+
+Open [http://localhost:3456](http://localhost:3456). The chat starts blank — try something like *"I need funding for my small business"* to begin.
+
 ## Tech stack
 
 - Node.js ≥ 20, TypeScript (ESM)
@@ -40,6 +50,8 @@ iwoca-poc/
   package.json
   tsconfig.json
   Dockerfile
+  demo/
+    index.html                   # ChatGPT-style visual demo
   README.md
 ```
 
