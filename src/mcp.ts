@@ -20,8 +20,11 @@ import {
 } from "./tools/creditCompass.js";
 import {
   creditCompassWidgetResource,
+  loanCalculatorWidgetResource,
   readCreditCompassWidget,
+  readLoanCalculatorWidget,
   CREDIT_COMPASS_WIDGET_URI,
+  LOAN_CALCULATOR_WIDGET_URI,
   WIDGET_MIME_TYPE,
 } from "./appsSdk.js";
 
@@ -72,19 +75,25 @@ export function createMcpServer(): Server {
     })),
   }));
 
-  // Resources: only the Credit Compass HTML widget (Apps SDK output template).
+  // Resources: the HTML widgets (Apps SDK output templates).
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
-    resources: [creditCompassWidgetResource],
+    resources: [creditCompassWidgetResource, loanCalculatorWidgetResource],
   }));
 
+  const WIDGET_READERS: Record<string, () => string> = {
+    [CREDIT_COMPASS_WIDGET_URI]: readCreditCompassWidget,
+    [LOAN_CALCULATOR_WIDGET_URI]: readLoanCalculatorWidget,
+  };
+
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    if (request.params.uri === CREDIT_COMPASS_WIDGET_URI) {
+    const reader = WIDGET_READERS[request.params.uri];
+    if (reader) {
       return {
         contents: [
           {
-            uri: CREDIT_COMPASS_WIDGET_URI,
+            uri: request.params.uri,
             mimeType: WIDGET_MIME_TYPE,
-            text: readCreditCompassWidget(),
+            text: reader(),
           },
         ],
       };

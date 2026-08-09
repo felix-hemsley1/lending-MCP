@@ -42,11 +42,19 @@ export const WIDGET_MIME_TYPE = "text/html+skybridge";
 /** Resource URI for the Credit Compass widget. */
 export const CREDIT_COMPASS_WIDGET_URI = "ui://widget/credit-compass.html";
 
-const CREDIT_COMPASS_WIDGET_FILE = resolve(WIDGET_DIR, "credit-compass.html");
+/** Resource URI for the Loan Calculator widget. */
+export const LOAN_CALCULATOR_WIDGET_URI = "ui://widget/loan-calculator.html";
 
-/** Read the widget HTML from disk (small file, read on demand). */
+const CREDIT_COMPASS_WIDGET_FILE = resolve(WIDGET_DIR, "credit-compass.html");
+const LOAN_CALCULATOR_WIDGET_FILE = resolve(WIDGET_DIR, "loan-calculator.html");
+
+/** Read the widget HTML from disk (small files, read on demand). */
 export function readCreditCompassWidget(): string {
   return readFileSync(CREDIT_COMPASS_WIDGET_FILE, "utf8");
+}
+
+export function readLoanCalculatorWidget(): string {
+  return readFileSync(LOAN_CALCULATOR_WIDGET_FILE, "utf8");
 }
 
 /**
@@ -59,11 +67,25 @@ export const creditCompassToolMeta = {
   [OUTPUT_TEMPLATE_META_KEY]: CREDIT_COMPASS_WIDGET_URI,
 } as const;
 
-/** Descriptor for the widget as an MCP resource (for resources/list). */
+/** The `_meta` block to attach to the loan_calculator tool definition. */
+export const loanCalculatorToolMeta = {
+  [OUTPUT_TEMPLATE_META_KEY]: LOAN_CALCULATOR_WIDGET_URI,
+} as const;
+
+/** Descriptors for the widgets as MCP resources (for resources/list). */
 export const creditCompassWidgetResource = {
   uri: CREDIT_COMPASS_WIDGET_URI,
   name: "iwoca Credit Compass widget",
   description:
     "Self-contained HTML widget that renders the illustrative iwoca Credit Compass demo output.",
+  mimeType: WIDGET_MIME_TYPE,
+} as const;
+
+export const loanCalculatorWidgetResource = {
+  uri: LOAN_CALCULATOR_WIDGET_URI,
+  name: "iwoca Loan Calculator widget",
+  description:
+    "Self-contained interactive HTML widget: choose amount, monthly rate and term, " +
+    "and see the illustrative daily-interest cost, including early-repayment savings.",
   mimeType: WIDGET_MIME_TYPE,
 } as const;

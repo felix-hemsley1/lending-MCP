@@ -47,15 +47,33 @@ test("tools/list returns the 3 read-only tools", async () => {
   }
 });
 
-test("credit_compass advertises its Apps SDK output template", async () => {
+test("widgets: tools advertise their Apps SDK output templates", async () => {
   const client = await connectClient();
   const { tools } = await client.listTools();
+
   const compass = tools.find((t) => t.name === "credit_compass");
   assert.ok(compass);
   assert.equal(
     (compass._meta as Record<string, unknown>)?.["openai/outputTemplate"],
     "ui://widget/credit-compass.html",
   );
+
+  const calc = tools.find((t) => t.name === "loan_calculator");
+  assert.ok(calc);
+  assert.equal(
+    (calc._meta as Record<string, unknown>)?.["openai/outputTemplate"],
+    "ui://widget/loan-calculator.html",
+  );
+
+  // Both widget resources are listed and readable.
+  const resources = await client.listResources();
+  const uris = resources.resources.map((r) => r.uri).sort();
+  assert.deepEqual(uris, [
+    "ui://widget/credit-compass.html",
+    "ui://widget/loan-calculator.html",
+  ]);
+  const read = await client.readResource({ uri: "ui://widget/loan-calculator.html" });
+  assert.match(read.contents[0].text as string, /Loan Calculator/);
 });
 
 test("get_product_info returns all products for 'all' and one for a specific id", async () => {
@@ -90,62 +108,88 @@ test("loan_calculator rejects out-of-range input", async () => {
 
   const tooBig = await client.callTool({
     name: "loan_calculator",
-    arguments: {
-      amount_gbp: 5_000_000,
-      term_months: 12,
-      min_annual_rate_pct: 5,
-      max_annual_rate_pct: 10,
-    },
+    arguments: { amount_gbp: 5_000_000, monthly_rate_pct: 3.3, term_months: 12 },
   });
   assert.equal(tooBig.isError, true);
 
   const badTerm = await client.callTool({
     name: "loan_calculator",
-    arguments: {
-      amount_gbp: 10_000,
-      term_months: 0,
-      min_annual_rate_pct: 5,
-      max_annual_rate_pct: 10,
-    },
+    arguments: { amount_gbp: 10_000, monthly_rate_pct: 3.3, term_months: 36 },
   });
   assert.equal(badTerm.isError, true);
 
-  const badRange = await client.callTool({
+  const rateTooHigh = await client.callTool({
     name: "loan_calculator",
-    arguments: {
-      amount_gbp: 10_000,
-      term_months: 12,
-      min_annual_rate_pct: 10,
-      max_annual_rate_pct: 5,
-    },
+    arguments: { amount_gbp: 10_000, monthly_rate_pct: 6, term_months: 12 },
   });
-  assert.equal(badRange.isError, true);
+  assert.equal(rateTooHigh.isError, true);
+
+  const earlyMissingDays = await client.callTool({
+    name: "loan_calculator",
+    arguments: { amount_gbp: 10_000, monthly_rate_pct: 3.3, term_months: 12, repay_early: true },
+  });
+  assert.equal(earlyMissingDays.isError, true);
 });
 
-test("loan_calculator returns low/high estimates plus a disclaimer", async () => {
+test("loan_calculator returns a full-term cost plus a disclaimer", async () => {
+  const client = await connectClient();
+
+  const result = await client.callTool({
+    name: "loan_calculator",
+    arguments: { amount_gbp: 50_000, monthly_rate_pct: 3.3, term_months: 24 },
+  });
+  assert.notEqual(result.isError, true);
+
+  const sc = result.structuredContent as {
+    full_term: {
+      interest_gbp: number;
+      total_repayable_gbp: number;
+      monthly_repayment_gbp: number;
+    };
+    early_repayment?: unknown;
+    disclaimer: string;
+  };
+  assert.ok(sc.full_term.interest_gbp > 0);
+  assert.ok(sc.full_term.total_repayable_gbp > 50_000);
+  assert.ok(sc.full_term.monthly_repayment_gbp > 0);
+  // Amortising payment must be well below the naive total/term of a bullet loan.
+  assert.ok(sc.full_term.monthly_repayment_gbp * 24 < 50_000 * 2);
+  assert.equal(sc.early_repayment, undefined);
+  assert.match(sc.disclaimer, /daily/i);
+});
+
+test("loan_calculator computes daily-interest early repayment with a saving", async () => {
   const client = await connectClient();
 
   const result = await client.callTool({
     name: "loan_calculator",
     arguments: {
-      amount_gbp: 10_000,
-      term_months: 12,
-      min_annual_rate_pct: 6,
-      max_annual_rate_pct: 12,
+      amount_gbp: 50_000,
+      monthly_rate_pct: 3.3,
+      term_months: 24,
+      repay_early: true,
+      early_repayment_days: 21,
     },
   });
   assert.notEqual(result.isError, true);
 
   const sc = result.structuredContent as {
-    low: { monthly_repayment_gbp: number; total_repayable_gbp: number };
-    high: { monthly_repayment_gbp: number; total_repayable_gbp: number };
-    disclaimer: string;
+    full_term: { interest_gbp: number };
+    early_repayment: {
+      days: number;
+      interest_gbp: number;
+      total_repayable_gbp: number;
+      saving_vs_full_term_gbp: number;
+    };
   };
-  assert.ok(sc.low && sc.high);
-  assert.ok(sc.low.monthly_repayment_gbp > 0);
-  assert.ok(sc.high.monthly_repayment_gbp > sc.low.monthly_repayment_gbp);
-  assert.ok(sc.high.total_repayable_gbp > 10_000);
-  assert.ok(sc.disclaimer.length > 0);
+
+  // Interest calculated daily: 50000 * (3.3/100/30) * 21 ≈ 1155
+  const expected = 50_000 * (3.3 / 100 / 30) * 21;
+  assert.ok(Math.abs(sc.early_repayment.interest_gbp - expected) < 0.5);
+  assert.equal(sc.early_repayment.days, 21);
+  assert.ok(sc.early_repayment.interest_gbp < sc.full_term.interest_gbp);
+  assert.ok(sc.early_repayment.saving_vs_full_term_gbp > 0);
+  assert.ok(sc.early_repayment.total_repayable_gbp < 50_000 + sc.full_term.interest_gbp);
 });
 
 test("credit_compass returns a scored, banded, factored demo view", async () => {
