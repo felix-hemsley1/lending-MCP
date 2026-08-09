@@ -11,22 +11,41 @@ import {
   handleGetProductInfo,
 } from "./tools/getProductInfo.js";
 import {
-  financeEstimatorDefinition,
-  handleFinanceEstimator,
-} from "./tools/financeEstimator.js";
+  getIwocaInfoDefinition,
+  handleGetIwocaInfo,
+} from "./tools/getIwocaInfo.js";
 import {
-  iwocaFinanceWidgetResource,
-  readIwocaFinanceWidget,
-  IWOCA_FINANCE_WIDGET_URI,
+  creditCompassDefinition,
+  handleCreditCompass,
+} from "./tools/creditCompass.js";
+import {
+  loanCalculatorDefinition,
+  handleLoanCalculator,
+} from "./tools/loanCalculator.js";
+import {
+  creditCompassWidgetResource,
+  loanCalculatorWidgetResource,
+  readCreditCompassWidget,
+  readLoanCalculatorWidget,
+  CREDIT_COMPASS_WIDGET_URI,
+  LOAN_CALCULATOR_WIDGET_URI,
   WIDGET_MIME_TYPE,
 } from "./appsSdk.js";
 
 export const SERVER_NAME = "iwoca-business-finance";
 export const SERVER_VERSION = "0.1.0";
 
+/**
+ * Chat-first design: the host model carries the conversation (how iwoca works,
+ * use cases, comparisons, reviews — via the knowledge tools) and surfaces the
+ * compass / calculator widgets contextually when the user wants an estimate or
+ * a cost view.
+ */
 export const TOOLS = [
+  getIwocaInfoDefinition,
   getProductInfoDefinition,
-  financeEstimatorDefinition,
+  creditCompassDefinition,
+  loanCalculatorDefinition,
 ] as const;
 
 type ToolHandler = (
@@ -38,8 +57,10 @@ type ToolHandler = (
 }>;
 
 const HANDLERS: Record<string, ToolHandler> = {
+  get_iwoca_info: handleGetIwocaInfo,
   get_product_info: handleGetProductInfo,
-  iwoca_finance_estimator: handleFinanceEstimator,
+  credit_compass: handleCreditCompass,
+  loan_calculator: handleLoanCalculator,
 };
 
 /**
@@ -64,19 +85,25 @@ export function createMcpServer(): Server {
     })),
   }));
 
-  // Resources: the unified iwoca finance HTML widget (Apps SDK output template).
+  // Resources: the two chat-surfaced HTML widgets (Apps SDK output templates).
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
-    resources: [iwocaFinanceWidgetResource],
+    resources: [creditCompassWidgetResource, loanCalculatorWidgetResource],
   }));
 
+  const WIDGET_READERS: Record<string, () => string> = {
+    [CREDIT_COMPASS_WIDGET_URI]: readCreditCompassWidget,
+    [LOAN_CALCULATOR_WIDGET_URI]: readLoanCalculatorWidget,
+  };
+
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    if (request.params.uri === IWOCA_FINANCE_WIDGET_URI) {
+    const reader = WIDGET_READERS[request.params.uri];
+    if (reader) {
       return {
         contents: [
           {
-            uri: IWOCA_FINANCE_WIDGET_URI,
+            uri: request.params.uri,
             mimeType: WIDGET_MIME_TYPE,
-            text: readIwocaFinanceWidget(),
+            text: reader(),
           },
         ],
       };

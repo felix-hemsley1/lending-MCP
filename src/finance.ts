@@ -9,6 +9,8 @@
 
 export const RATE_MIN = 1.5; // % per month (illustrative slider range)
 export const RATE_MAX = 5.7;
+/** iwoca's published representative rate, % per month (used in copy + defaults). */
+export const REP_RATE_PCT = 3.3;
 export const TERMS = [12, 24, 48, 60] as const;
 export const DAYS_PER_MONTH = 30; // iwoca quotes interest "per 30 days"
 
@@ -110,14 +112,33 @@ export function creditCompass(inputs: CompassInputs): {
 /**
  * Map a demo score to a ROUGH indicative monthly interest-rate range. Higher
  * score → lower rate. This is NOT iwoca's pricing and NOT a guarantee.
+ *
+ * Piecewise-linear over calibration anchors: a typical business (base score,
+ * no extra info) lands a little above the published representative rate
+ * (3.3%/month), stronger businesses trend below it, weaker toward the top of
+ * the illustrative range.
  */
+const RATE_ANCHORS: ReadonlyArray<readonly [number, number]> = [
+  [SCORE_MIN, RATE_MAX], // 35 → 5.7
+  [62, 3.9],
+  [SCORE_MAX, 2.0], // 90 → 2.0
+];
+
 export function indicativeMonthlyRate(score: number): {
   low: number;
   mid: number;
   high: number;
 } {
-  const t = (clamp(score, SCORE_MIN, SCORE_MAX) - SCORE_MIN) / (SCORE_MAX - SCORE_MIN);
-  const mid = RATE_MAX - t * (RATE_MAX - RATE_MIN);
+  const s = clamp(score, SCORE_MIN, SCORE_MAX);
+  let mid = RATE_ANCHORS[RATE_ANCHORS.length - 1][1];
+  for (let k = 0; k < RATE_ANCHORS.length - 1; k++) {
+    const [s0, r0] = RATE_ANCHORS[k];
+    const [s1, r1] = RATE_ANCHORS[k + 1];
+    if (s <= s1) {
+      mid = r0 + ((s - s0) / (s1 - s0)) * (r1 - r0);
+      break;
+    }
+  }
   return {
     low: round2(clamp(mid - 0.4, RATE_MIN, RATE_MAX)),
     mid: round2(mid),

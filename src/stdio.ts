@@ -1,5 +1,5 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { createMcpServer, SERVER_NAME, SERVER_VERSION } from "./mcp.js";
+import { createMcpServer, SERVER_NAME, SERVER_VERSION, TOOLS } from "./mcp.js";
 
 /**
  * Stdio entry point for local testing with the MCP Inspector or any stdio MCP
@@ -15,7 +15,7 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   process.stderr.write(
-    `${SERVER_NAME} v${SERVER_VERSION} ready on stdio (read-only: get_product_info, loan_calculator, credit_compass)\n`,
+    `${SERVER_NAME} v${SERVER_VERSION} ready on stdio (read-only: ${TOOLS.map((t) => t.name).join(", ")})\n`,
   );
 }
 

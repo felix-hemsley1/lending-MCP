@@ -1,0 +1,89 @@
+{
+  "disclaimer": "General information about iwoca as published on iwoca.co.uk and Trustpilot, collected 2026-08-09. Not a financial promotion, a quote, or an offer of credit. Figures and policies can change — confirm against the live pages before relying on them. Anything marked \"[VERIFY]\" needs human confirmation. Lending is subject to status and iwoca's assessment.",
+  "source": {
+    "collected": "2026-08-09",
+    "method": "Collected via domain-scoped web search over iwoca.co.uk, support.iwoca.co.uk and trustpilot.com; direct fetch of iwoca.co.uk was blocked by this environment's egress policy, so a human should re-read the live pages to confirm.",
+    "urls": [
+      "https://www.iwoca.co.uk/flexi-loan",
+      "https://www.iwoca.co.uk/faq",
+      "https://support.iwoca.co.uk/en/articles/497437-what-is-an-iwoca-flexi-loan",
+      "https://support.iwoca.co.uk/en/articles/3974181-faqs-how-iwoca-loans-work-and-who-is-eligible",
+      "https://uk.trustpilot.com/review/iwoca.co.uk",
+      "https://www.iwoca.co.uk/inside-iwoca/10-000-trustpilot-reviews"
+    ]
+  },
+  "topics": {
+    "how_it_works": {
+      "title": "How iwoca works",
+      "points": [
+        "Apply online in about 5 minutes — a few basic questions about you and your business.",
+        "Link your business accounts or upload bank statements / VAT returns / company accounts; iwoca assesses your business performance.",
+        "In almost all cases you get a decision within 24 hours — often within hours.",
+        "Once approved, draw down what you need to your bank account; funds typically arrive in hours.",
+        "You're only charged interest on what you actually draw down, for the days you use it.",
+        "Repay early any time — there are no fees for early repayment.",
+        "Borrowing over 12 months may incur an additional fee (typically 5% for 13-24 months, 6% for longer)."
+      ]
+    },
+    "use_cases": {
+      "title": "What businesses use iwoca for",
+      "points": [
+        "Working capital and smoothing cash flow between invoices.",
+        "Buying stock or inventory ahead of busy periods.",
+        "Equipment, vehicles and tools.",
+        "Expansion — new premises, new locations, growth projects.",
+        "Hiring staff.",
+        "Covering a VAT or tax bill.",
+        "Bridging gaps while waiting on customer payments."
+      ]
+    },
+    "comparison": {
+      "title": "How iwoca compares (iwoca's published positioning)",
+      "points": [
+        "Speed: applying takes minutes and decisions usually arrive within 24 hours, versus the weeks a traditional bank process can take.",
+        "Flexibility: a Flexi-Loan works like a credit facility — draw down, repay, and top up within your approved limit, rather than a single fixed lump sum.",
+        "Pay for what you use: interest is charged only on drawn funds for the days used, and there are no early-repayment fees.",
+        "Unsecured with no asset requirements; a personal guarantee from a director is required for limited companies.",
+        "Eligibility is broad: no minimum turnover or trading history stated (startups capped around £10,000).",
+        "[VERIFY] Any named side-by-side comparison against a specific lender should be checked against that lender's current terms before use."
+      ],
+      "note": "These points come from iwoca's own published pages — they are positioning, not an independent comparison."
+    },
+    "testimonials": {
+      "title": "What customers say",
+      "trustpilot": {
+        "rating": "4.8 / 5 on Trustpilot",
+        "review_count": "12,700+ reviews",
+        "checked": "2026-08-09"
+      },
+      "published_themes": [
+        "Applications taking minutes rather than the weeks expected from high-street banks.",
+        "Clear terms, no hidden charges, no early-repayment penalties.",
+        "Dedicated account manager for every customer; most calls answered within 60 seconds (iwoca, founded 2012).",
+        "Repeat borrowing to support growth goals.",
+        "Balance: some reviewers mention wanting clearer answers on early-repayment options, and some feel rates are high."
+      ],
+      "named_case_studies": "[VERIFY] — add real, permissioned customer quotes/case studies from iwoca's marketing team before publishing. Do not invent quotes."
+    },
+    "rates_and_fees": {
+      "title": "Rates and fees",
+      "points": [
+        "iwoca's representative rate is 3.3% per month (interest quoted per 30 days).",
+        "Your actual rate is based on your business and confirmed after assessment — any rate shown before applying is a rough estimate, not a guarantee.",
+        "Interest is charged daily on your outstanding balance, so each repayment's interest portion falls as the balance reduces.",
+        "No fees for early repayment — settle any time and pay interest only up to that day.",
+        "Borrowing over 12 months may incur an additional fee (typically 5% for 13-24 months, 6% for longer)."
+      ]
+    },
+    "eligibility": {
+      "title": "Who can apply",
+      "points": [
+        "UK-based business.",
+        "Limited company or LLP / partnership (iwoca states it no longer lends to sole traders).",
+        "Applicant aged 18 or over.",
+        "No minimum turnover and no minimum trading history stated; startups with no trading history are capped around £10,000.",
+        "Borrow £1,000 to £1,000,000; credit limits are typically up to around two months' turnover."
+      ]
+    }
+  }
+}

@@ -32,21 +32,28 @@ so the same server can back a Claude connector.
 | M5 | Developer Mode demo pack (`docs/demo.md`, tunnel steps, 6-prompt script) | Not started |
 | M6 | Submission artefacts (listing metadata, privacy field inventory, test cases, domain verification) — draft only | Not started |
 
-### M1 — Baseline + test harness (done)
+### M1 — Baseline + test harness (done, evolved chat-first)
 
-- Read-only tools: `get_product_info` and `iwoca_finance_estimator`.
-- `iwoca_finance_estimator` is one guided build (needs → business → demo Credit
-  Compass estimate + rough non-guaranteed indicative rate → daily-interest cost
-  calculator with over-12-month fee → application link). It merges the earlier
-  `credit_compass` and `loan_calculator` tools; shared maths in `src/finance.ts`.
-- `data/products.json` — public product data (from iwoca.co.uk, with provenance).
-- `widget/iwoca-finance.html` — self-contained guided widget (no external assets).
+- Chat-first design: the host model carries the conversation and surfaces widgets
+  contextually. Read-only tools: `get_iwoca_info` (knowledge: how it works, use
+  cases, comparison, testimonials/Trustpilot, rates & fees, eligibility),
+  `get_product_info`, `credit_compass` (demo estimate + rough non-guaranteed
+  indicative rate), `loan_calculator` (daily-interest cost + fee + apply link).
+- Shared maths in `src/finance.ts`; rate curve anchored so the representative
+  3.3%/month is referenced in all copy and defaults.
+- `data/products.json` + `data/knowledge.json` — sourced content with provenance;
+  `[VERIFY]` marks unconfirmed items (esp. named testimonials — never invent).
+- Widgets: `widget/credit-compass.html`, `widget/loan-calculator.html` (compact
+  in-chat cards, self-contained). `demo/index.html` — scripted chat mock of the
+  full experience.
 - OpenAI Apps SDK glue isolated in `src/appsSdk.ts`.
 - `node:test` suite (`test/`) + `npm test` + GitHub Actions (`.github/workflows/ci.yml`).
 
 Open items: brand red (`~#c85f57`) and the logo (text wordmark) are approximations
 pending the exact brand assets. Application link is set to
 `https://www.iwoca.co.uk/apply/new` (override via `IWOCA_APPLICATION_URL`).
+Named customer case studies in knowledge.json are `[VERIFY]` placeholders awaiting
+real permissioned quotes.
 
 ## Submission checklist (for M6, do not submit yet)
 

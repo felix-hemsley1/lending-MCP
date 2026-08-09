@@ -29,14 +29,19 @@
       <p>The two interactive widgets served by the MCP server. Everything below is illustrative / demo data.</p>
     </header>
     <div class="note">
-      Local preview only. The widgets normally receive their data from the MCP tools
-      inside ChatGPT; here they run standalone with sample/default values so you can
-      click around. The MCP server itself runs separately (see the README).
+      Local preview only. <b>Open <a href="../demo/">the chat demo</a> for the full
+      experience</b> — a conversational interface that surfaces these widgets inline.
+      Below are the two MCP widgets standalone (in ChatGPT they receive data from the
+      credit_compass / loan_calculator tools).
     </div>
-    <div class="grid" style="grid-template-columns: 1fr;">
+    <div class="grid">
       <div class="panel">
-        <h2>iwoca_finance_estimator → guided finance widget (needs → estimate → cost → apply)</h2>
-        <iframe class="calc" src="../widget/iwoca-finance.html" title="iwoca finance estimator"></iframe>
+        <h2>credit_compass → Credit Compass widget (demo, fake data)</h2>
+        <iframe class="compass" src="../widget/credit-compass.html" title="Credit Compass"></iframe>
+      </div>
+      <div class="panel">
+        <h2>loan_calculator → Loan Calculator widget</h2>
+        <iframe class="calc" src="../widget/loan-calculator.html" title="Loan Calculator"></iframe>
       </div>
     </div>
   </body>

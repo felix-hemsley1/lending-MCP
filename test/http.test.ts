@@ -18,7 +18,7 @@ test("HTTP server boots and /healthz reports the tools", async () => {
     assert.equal(body.status, "ok");
     assert.deepEqual(
       body.tools.sort(),
-      ["get_product_info", "iwoca_finance_estimator"],
+      ["credit_compass", "get_iwoca_info", "get_product_info", "loan_calculator"],
     );
   } finally {
     await app.close();

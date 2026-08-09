@@ -25,15 +25,23 @@ SDK-specific glue is isolated in one module (`src/appsSdk.ts`).
   real iwoca data. "Demo / illustrative" wording appears in the tool description,
   the tool output, and the widget.
 
+## Design: chat-first
+
+The chat is the interface — in ChatGPT the host model carries the conversation
+(how iwoca works, use cases, comparisons, reviews) using the knowledge tools, and
+surfaces the compass / calculator widgets inline when the user wants an estimate
+or a cost view. `demo/index.html` is a scripted local mock of that experience.
+
 ## Tools
 
 | Tool | Purpose |
 | --- | --- |
-| `get_product_info` | Return public product info from `data/products.json` (sourced from iwoca.co.uk, with provenance + caveats). `product_id: "all"` (default) or a specific id. |
-| `iwoca_finance_estimator` | Guided journey in one widget: what you need → business details → **demo** Credit Compass estimate + a **rough, non-guaranteed** indicative monthly rate → daily-interest cost calculator (amortising, over-12-month fee) → application link for an exact rate. Advertises the widget via the Apps SDK. |
+| `get_iwoca_info` | Conversational knowledge: how it works, use cases, comparison (iwoca's published positioning), testimonials/Trustpilot, rates & fees, eligibility — from `data/knowledge.json` (sourced, with provenance; `[VERIFY]` marks unconfirmed content). |
+| `get_product_info` | Public product info from `data/products.json` (sourced from iwoca.co.uk, with provenance + caveats). |
+| `credit_compass` | **Demo** estimate widget: score (35–90), band, 3 factors, plus a **rough, non-guaranteed** indicative monthly rate. Fake illustrative logic — no real iwoca data. |
+| `loan_calculator` | Cost widget: rate slider (1.5–5.7%/month, default the representative 3.3%, or the compass rate), term 12/24/48/60, daily interest on the reducing balance, over-12-month fee, early-repayment savings, apply link. |
 
-The estimator merges the earlier separate `credit_compass` and `loan_calculator`
-tools into one build. Shared maths live in `src/finance.ts`.
+Shared maths live in `src/finance.ts`.
 
 ## Tech stack
 
@@ -47,7 +55,7 @@ tools into one build. Shared maths live in `src/finance.ts`.
 
 ```
 src/
-  mcp.ts            # MCP server factory: tools + widget resource
+  mcp.ts            # MCP server factory: 4 tools + 2 widget resources
   server.ts         # HTTP entry point (Streamable HTTP). Exports buildServer()
   stdio.ts          # stdio entry point (for the MCP Inspector)
   config.ts         # data/widget paths, application URL (env config expands in M2)
@@ -55,12 +63,17 @@ src/
   finance.ts        # shared maths: demo compass, indicative rate, amortising cost
   appsSdk.ts        # ISOLATED OpenAI Apps SDK keys (outputTemplate / skybridge)
   tools/
+    getIwocaInfo.ts
     getProductInfo.ts
-    financeEstimator.ts
-data/products.json  # public product data (from iwoca.co.uk, with provenance)
-widget/iwoca-finance.html   # self-contained guided finance widget (no external assets)
-preview/index.html  # local preview page (npm run preview)
-test/               # node:test suites (mcp.test.ts, http.test.ts)
+    creditCompass.ts
+    loanCalculator.ts
+data/products.json   # public product data (from iwoca.co.uk, with provenance)
+data/knowledge.json  # conversational knowledge (sourced, with provenance)
+widget/credit-compass.html   # in-chat estimate card (self-contained)
+widget/loan-calculator.html  # in-chat cost calculator card (self-contained)
+demo/index.html      # scripted chat demo of the full experience
+preview/index.html   # widget preview page (npm run preview)
+test/                # node:test suites (mcp.test.ts, http.test.ts)
 ```
 
 ## Running locally
@@ -75,18 +88,18 @@ npm run build && npm start
 Defaults to `http://0.0.0.0:3000`. Env vars: `PORT` (3000), `HOST` (0.0.0.0),
 `LOG_LEVEL` (info). (Broader env config lands in M2.)
 
-## Local preview of the widgets
-
-To click around the two widgets in a browser without ChatGPT:
+## Local chat demo + widget preview
 
 ```bash
 npm run preview     # serves the repo on http://localhost:4321
-# then open http://localhost:4321/preview/
+# chat demo:      http://localhost:4321/demo/
+# widget preview: http://localhost:4321/preview/
 ```
 
-The widgets run standalone here with sample/default values (in ChatGPT they receive
-their data from the MCP tools). This is a UI preview only — it does not exercise the
-MCP protocol; use the MCP Inspector below for that.
+The chat demo is a scripted mock of the ChatGPT experience — conversation plus
+inline compass/calculator cards. It runs no real model and stores nothing. The
+widget preview shows the two MCP widgets standalone. Neither exercises the MCP
+protocol; use the MCP Inspector below for that.
 
 ## Testing
 
@@ -102,7 +115,8 @@ npm run inspector   # builds, then launches the Inspector on the stdio entry poi
 ```
 
 Open the printed URL, **Connect**, open **Tools → List Tools** (you should see
-`get_product_info` and `iwoca_finance_estimator`), and call each by hand.
+`get_iwoca_info`, `get_product_info`, `credit_compass`, `loan_calculator`), and
+call each by hand.
 
 ## Endpoints
 
@@ -162,9 +176,10 @@ understand them ignores them and uses the text / structured content instead.
 
 ## Not the server: `demo/`
 
-`demo/index.html` is a **standalone browser mockup** of the ChatGPT experience
-(deployed to GitHub Pages by `.github/workflows/deploy-demo.yml`). It is not part
-of the MCP server and currently still depicts the earlier application flow.
+`demo/index.html` is a **standalone scripted mockup** of the ChatGPT experience
+(deployed to GitHub Pages by `.github/workflows/deploy-demo.yml`). It mirrors the
+knowledge data and widget maths but runs no real model and is not part of the MCP
+server.
 
 ## What's deliberately out of scope (Phase 1)
 

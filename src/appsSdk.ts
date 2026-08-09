@@ -37,28 +37,43 @@ export const OUTPUT_TEMPLATE_META_KEY = "openai/outputTemplate";
 /** MIME type the host expects for an Apps SDK (skybridge) HTML widget. */
 export const WIDGET_MIME_TYPE = "text/html+skybridge";
 
-/** Resource URI for the unified iwoca finance widget. */
-export const IWOCA_FINANCE_WIDGET_URI = "ui://widget/iwoca-finance.html";
+/** Resource URIs for the chat-surfaced widgets. */
+export const CREDIT_COMPASS_WIDGET_URI = "ui://widget/credit-compass.html";
+export const LOAN_CALCULATOR_WIDGET_URI = "ui://widget/loan-calculator.html";
 
-const IWOCA_FINANCE_WIDGET_FILE = resolve(WIDGET_DIR, "iwoca-finance.html");
+const CREDIT_COMPASS_WIDGET_FILE = resolve(WIDGET_DIR, "credit-compass.html");
+const LOAN_CALCULATOR_WIDGET_FILE = resolve(WIDGET_DIR, "loan-calculator.html");
 
-/** Read the widget HTML from disk (small file, read on demand). */
-export function readIwocaFinanceWidget(): string {
-  return readFileSync(IWOCA_FINANCE_WIDGET_FILE, "utf8");
+/** Read the widget HTML from disk (small files, read on demand). */
+export function readCreditCompassWidget(): string {
+  return readFileSync(CREDIT_COMPASS_WIDGET_FILE, "utf8");
+}
+export function readLoanCalculatorWidget(): string {
+  return readFileSync(LOAN_CALCULATOR_WIDGET_FILE, "utf8");
 }
 
-/** The `_meta` block to attach to the finance estimator tool definition. */
-export const iwocaFinanceToolMeta = {
-  [OUTPUT_TEMPLATE_META_KEY]: IWOCA_FINANCE_WIDGET_URI,
+/** `_meta` blocks linking each tool to its widget. */
+export const creditCompassToolMeta = {
+  [OUTPUT_TEMPLATE_META_KEY]: CREDIT_COMPASS_WIDGET_URI,
+} as const;
+export const loanCalculatorToolMeta = {
+  [OUTPUT_TEMPLATE_META_KEY]: LOAN_CALCULATOR_WIDGET_URI,
 } as const;
 
-/** Descriptor for the widget as an MCP resource (for resources/list). */
-export const iwocaFinanceWidgetResource = {
-  uri: IWOCA_FINANCE_WIDGET_URI,
-  name: "iwoca finance estimator widget",
+/** Descriptors for the widgets as MCP resources (for resources/list). */
+export const creditCompassWidgetResource = {
+  uri: CREDIT_COMPASS_WIDGET_URI,
+  name: "iwoca Credit Compass widget",
   description:
-    "Self-contained interactive HTML widget: a guided journey from what you need " +
-    "and your business details, to an illustrative Credit Compass estimate and rough " +
-    "indicative rate, a daily-interest cost calculator, and an application link.",
+    "Compact in-chat card: DEMO Credit Compass estimate (score, band, factors) and " +
+    "a rough, non-guaranteed indicative monthly rate.",
+  mimeType: WIDGET_MIME_TYPE,
+} as const;
+export const loanCalculatorWidgetResource = {
+  uri: LOAN_CALCULATOR_WIDGET_URI,
+  name: "iwoca Loan Calculator widget",
+  description:
+    "Compact in-chat card: interactive daily-interest cost calculator (rate slider, " +
+    "term, reducing-balance schedule, early repayment) with an application link.",
   mimeType: WIDGET_MIME_TYPE,
 } as const;
