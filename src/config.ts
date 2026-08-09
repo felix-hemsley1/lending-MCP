@@ -16,10 +16,10 @@ export const PRODUCTS_PATH = resolve(projectRoot, "data", "products.json");
 export const WIDGET_DIR = resolve(projectRoot, "widget");
 
 /**
- * Where the "get an exact rate from iwoca" button points. Set the real iwoca
- * application URL via IWOCA_APPLICATION_URL. The default is a PLACEHOLDER
- * (iwoca.co.uk homepage) — [VERIFY] and replace with the exact application URL.
+ * Where the "get an exact rate from iwoca" button points. Override via
+ * IWOCA_APPLICATION_URL. Default is iwoca's application URL as provided by the
+ * project owner (2026-08-09).
  */
 export const APPLICATION_URL =
-  process.env.IWOCA_APPLICATION_URL ?? "https://www.iwoca.co.uk/";
+  process.env.IWOCA_APPLICATION_URL ?? "https://www.iwoca.co.uk/apply/new";
 

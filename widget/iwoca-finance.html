@@ -264,7 +264,7 @@
         years_trading: "", monthly_revenue: "",
         score: null, band: "", factors: [], rate: { low: 3.3, mid: 3.3, high: 3.3 },
         ratePct: 3.3, term: 24, early: false, earlyN: 3, earlyUnit: 7,
-        application_url: "https://www.iwoca.co.uk/",
+        application_url: "https://www.iwoca.co.uk/apply/new",
       };
 
       function gbp(n) { return "£" + (Math.round(n * 100) / 100).toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -381,7 +381,7 @@
       function renderApply() {
         document.getElementById("applyAmount").textContent = gbp0(num(state.amount) || 0) + (state.purpose ? " · " + state.purpose : "");
         document.getElementById("applyRate").textContent = "~" + state.rate.mid + "% / month (not a guarantee)";
-        document.getElementById("applyLink").href = state.application_url || "https://www.iwoca.co.uk/";
+        document.getElementById("applyLink").href = state.application_url || "https://www.iwoca.co.uk/apply/new";
       }
 
       function showStep(n) {

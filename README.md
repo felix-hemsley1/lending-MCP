@@ -19,8 +19,8 @@ SDK-specific glue is isolated in one module (`src/appsSdk.ts`).
   anything not published as a single figure stays `[VERIFY]`. A human should
   re-read the live pages to confirm. The estimator's indicative rate is derived
   from the **demo** Credit Compass and labelled a rough, non-guaranteed estimate
-  — not iwoca's real pricing. The application link (`IWOCA_APPLICATION_URL`) is a
-  **placeholder** pending the real URL.
+  — not iwoca's real pricing. The application link defaults to
+  `https://www.iwoca.co.uk/apply/new` (override via `IWOCA_APPLICATION_URL`).
 - **Credit Compass is a demo.** It is not a credit score or decision and uses no
   real iwoca data. "Demo / illustrative" wording appears in the tool description,
   the tool output, and the widget.

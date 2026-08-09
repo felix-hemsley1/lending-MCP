@@ -44,8 +44,9 @@ so the same server can back a Claude connector.
 - OpenAI Apps SDK glue isolated in `src/appsSdk.ts`.
 - `node:test` suite (`test/`) + `npm test` + GitHub Actions (`.github/workflows/ci.yml`).
 
-Open items: the application link is a placeholder (`IWOCA_APPLICATION_URL`) pending
-the real iwoca application URL; brand red / logo are approximations.
+Open items: brand red (`~#c85f57`) and the logo (text wordmark) are approximations
+pending the exact brand assets. Application link is set to
+`https://www.iwoca.co.uk/apply/new` (override via `IWOCA_APPLICATION_URL`).
 
 ## Submission checklist (for M6, do not submit yet)
 
