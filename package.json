@@ -12,6 +12,7 @@
     "dev": "tsx watch src/server.ts",
     "dev:stdio": "tsx src/stdio.ts",
     "inspector": "npm run build && npx @modelcontextprotocol/inspector node dist/stdio.js",
+    "preview": "npx --yes serve . -l 4321",
     "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>iwoca ChatGPT app — local preview</title>
+    <style>
+      :root { color-scheme: light; --bg: #f7f9fd; --fg: #14171d; --muted: #454b57; --iwoca-red: #c85f57; --border: #c6d6f1; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--fg); }
+      header { padding: 20px 16px 8px; max-width: 1120px; margin: 0 auto; }
+      header .logo { color: var(--iwoca-red); font-weight: 800; font-size: 26px; }
+      header h1 { font-size: 20px; margin: 6px 0 2px; }
+      header p { color: var(--muted); margin: 0; font-size: 14px; }
+      .note { max-width: 1120px; margin: 12px auto 0; padding: 10px 14px; background: #fff; border: 1px solid var(--border); border-radius: 10px; font-size: 13px; color: var(--muted); }
+      .grid { max-width: 1120px; margin: 16px auto 40px; padding: 0 16px; display: grid; gap: 20px; grid-template-columns: 1fr; }
+      @media (min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; align-items: start; } }
+      .panel { background: #fff; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+      .panel h2 { font-size: 14px; margin: 0; padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--muted); }
+      iframe { width: 100%; border: 0; display: block; background: var(--bg); }
+      iframe.calc { height: 1560px; }
+      iframe.compass { height: 780px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">iwoca</div>
+      <h1>ChatGPT app — local preview</h1>
+      <p>The two interactive widgets served by the MCP server. Everything below is illustrative / demo data.</p>
+    </header>
+    <div class="note">
+      Local preview only. The widgets normally receive their data from the MCP tools
+      inside ChatGPT; here they run standalone with sample/default values so you can
+      click around. The MCP server itself runs separately (see the README).
+    </div>
+    <div class="grid">
+      <div class="panel">
+        <h2>loan_calculator → Loan Calculator widget</h2>
+        <iframe class="calc" src="../widget/loan-calculator.html" title="Loan Calculator"></iframe>
+      </div>
+      <div class="panel">
+        <h2>credit_compass → Credit Compass widget (demo, fake data)</h2>
+        <iframe class="compass" src="../widget/credit-compass.html" title="Credit Compass"></iframe>
+      </div>
+    </div>
+  </body>
+</html>

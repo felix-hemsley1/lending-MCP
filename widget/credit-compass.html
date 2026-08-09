@@ -112,14 +112,28 @@
     </div>
 
     <script>
+      // Sample data used ONLY when opened outside an Apps SDK host (e.g. local
+      // preview / file://). In real use the credit_compass tool supplies
+      // window.openai.toolOutput, so this fallback never shows in ChatGPT.
+      var SAMPLE = {
+        demo: true, data_source: "fake", requires_api_connection: true,
+        business_name: "Sample Trading Ltd", score: 71, band: "Good",
+        factors: [
+          { name: "Trading history", signal: "strong", note: "4 year(s) trading (illustrative)." },
+          { name: "Cash flow", signal: "steady", note: "~£18,000/month revenue (illustrative)." },
+          { name: "Affordability headroom", signal: "steady", note: "Illustrative repayment headroom indicator (demo)." }
+        ],
+        disclaimer: "DEMO / ILLUSTRATIVE ONLY — THIS IS FAKE DATA (local preview sample). " +
+          "Not a credit score or decision; a real Credit Compass would require connecting to iwoca's scoring API."
+      };
+
       // Read the tool's structuredContent from the Apps SDK host, if present.
-      // (window.openai is injected by ChatGPT / Apps SDK hosts. This widget
-      // degrades gracefully to a placeholder when opened outside such a host.)
+      // (window.openai is injected by ChatGPT / Apps SDK hosts.)
       function getData() {
         try {
           if (window.openai && window.openai.toolOutput) return window.openai.toolOutput;
         } catch (e) {}
-        return null;
+        return SAMPLE;
       }
 
       function esc(s) {

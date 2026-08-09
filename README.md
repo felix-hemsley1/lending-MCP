@@ -70,6 +70,19 @@ npm run build && npm start
 Defaults to `http://0.0.0.0:3000`. Env vars: `PORT` (3000), `HOST` (0.0.0.0),
 `LOG_LEVEL` (info). (Broader env config lands in M2.)
 
+## Local preview of the widgets
+
+To click around the two widgets in a browser without ChatGPT:
+
+```bash
+npm run preview     # serves the repo on http://localhost:4321
+# then open http://localhost:4321/preview/
+```
+
+The widgets run standalone here with sample/default values (in ChatGPT they receive
+their data from the MCP tools). This is a UI preview only — it does not exercise the
+MCP protocol; use the MCP Inspector below for that.
+
 ## Testing
 
 ```bash
