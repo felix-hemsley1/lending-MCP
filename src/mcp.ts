@@ -11,20 +11,13 @@ import {
   handleGetProductInfo,
 } from "./tools/getProductInfo.js";
 import {
-  loanCalculatorDefinition,
-  handleLoanCalculator,
-} from "./tools/loanCalculator.js";
+  financeEstimatorDefinition,
+  handleFinanceEstimator,
+} from "./tools/financeEstimator.js";
 import {
-  creditCompassDefinition,
-  handleCreditCompass,
-} from "./tools/creditCompass.js";
-import {
-  creditCompassWidgetResource,
-  loanCalculatorWidgetResource,
-  readCreditCompassWidget,
-  readLoanCalculatorWidget,
-  CREDIT_COMPASS_WIDGET_URI,
-  LOAN_CALCULATOR_WIDGET_URI,
+  iwocaFinanceWidgetResource,
+  readIwocaFinanceWidget,
+  IWOCA_FINANCE_WIDGET_URI,
   WIDGET_MIME_TYPE,
 } from "./appsSdk.js";
 
@@ -33,8 +26,7 @@ export const SERVER_VERSION = "0.1.0";
 
 export const TOOLS = [
   getProductInfoDefinition,
-  loanCalculatorDefinition,
-  creditCompassDefinition,
+  financeEstimatorDefinition,
 ] as const;
 
 type ToolHandler = (
@@ -47,15 +39,13 @@ type ToolHandler = (
 
 const HANDLERS: Record<string, ToolHandler> = {
   get_product_info: handleGetProductInfo,
-  loan_calculator: handleLoanCalculator,
-  credit_compass: handleCreditCompass,
+  iwoca_finance_estimator: handleFinanceEstimator,
 };
 
 /**
- * Build a fresh MCP Server wired to the three read-only iwoca tools. Each
- * transport (HTTP session or stdio) gets its own Server instance. The server is
- * stateless and read-only: no PII, no persistence, no session state tied to a
- * person (Phase 1).
+ * Build a fresh MCP Server wired to the read-only iwoca tools. Each transport
+ * (HTTP session or stdio) gets its own Server instance. The server is stateless
+ * and read-only: no PII, no persistence, no session state tied to a person.
  */
 export function createMcpServer(): Server {
   const server = new Server(
@@ -70,30 +60,23 @@ export function createMcpServer(): Server {
       description: tool.description,
       inputSchema: tool.inputSchema,
       annotations: tool.annotations,
-      // _meta is only present on tools that declare an Apps SDK widget.
       ...("_meta" in tool ? { _meta: tool._meta } : {}),
     })),
   }));
 
-  // Resources: the HTML widgets (Apps SDK output templates).
+  // Resources: the unified iwoca finance HTML widget (Apps SDK output template).
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
-    resources: [creditCompassWidgetResource, loanCalculatorWidgetResource],
+    resources: [iwocaFinanceWidgetResource],
   }));
 
-  const WIDGET_READERS: Record<string, () => string> = {
-    [CREDIT_COMPASS_WIDGET_URI]: readCreditCompassWidget,
-    [LOAN_CALCULATOR_WIDGET_URI]: readLoanCalculatorWidget,
-  };
-
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    const reader = WIDGET_READERS[request.params.uri];
-    if (reader) {
+    if (request.params.uri === IWOCA_FINANCE_WIDGET_URI) {
       return {
         contents: [
           {
-            uri: request.params.uri,
+            uri: IWOCA_FINANCE_WIDGET_URI,
             mimeType: WIDGET_MIME_TYPE,
-            text: reader(),
+            text: readIwocaFinanceWidget(),
           },
         ],
       };
@@ -107,10 +90,7 @@ export function createMcpServer(): Server {
       return {
         isError: true,
         content: [
-          {
-            type: "text",
-            text: `Unknown tool '${request.params.name}'.`,
-          },
+          { type: "text", text: `Unknown tool '${request.params.name}'.` },
         ],
       };
     }

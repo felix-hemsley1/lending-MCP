@@ -14,3 +14,12 @@ const projectRoot = resolve(here, "..");
 
 export const PRODUCTS_PATH = resolve(projectRoot, "data", "products.json");
 export const WIDGET_DIR = resolve(projectRoot, "widget");
+
+/**
+ * Where the "get an exact rate from iwoca" button points. Set the real iwoca
+ * application URL via IWOCA_APPLICATION_URL. The default is a PLACEHOLDER
+ * (iwoca.co.uk homepage) — [VERIFY] and replace with the exact application URL.
+ */
+export const APPLICATION_URL =
+  process.env.IWOCA_APPLICATION_URL ?? "https://www.iwoca.co.uk/";
+

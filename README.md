@@ -11,14 +11,16 @@ SDK-specific glue is isolated in one module (`src/appsSdk.ts`).
 ## Phase 1 scope & ground rules
 
 - **Read-only and stateless.** No auth, no PII, no persistence, no session state
-  tied to a person. All three tools are annotated `readOnlyHint: true`,
+  tied to a person. Both tools are annotated `readOnlyHint: true`,
   `openWorldHint: false`.
 - **No invented iwoca figures.** `data/products.json` is populated from
   iwoca.co.uk (collected 2026-08-09 via domain-scoped search — direct site fetch
   was egress-blocked), with a `source` provenance block and per-figure caveats;
   anything not published as a single figure stays `[VERIFY]`. A human should
-  re-read the live pages to confirm. The loan calculator never assumes an iwoca
-  rate — the caller supplies an illustrative rate range.
+  re-read the live pages to confirm. The estimator's indicative rate is derived
+  from the **demo** Credit Compass and labelled a rough, non-guaranteed estimate
+  — not iwoca's real pricing. The application link (`IWOCA_APPLICATION_URL`) is a
+  **placeholder** pending the real URL.
 - **Credit Compass is a demo.** It is not a credit score or decision and uses no
   real iwoca data. "Demo / illustrative" wording appears in the tool description,
   the tool output, and the widget.
@@ -28,8 +30,10 @@ SDK-specific glue is isolated in one module (`src/appsSdk.ts`).
 | Tool | Purpose |
 | --- | --- |
 | `get_product_info` | Return public product info from `data/products.json` (sourced from iwoca.co.uk, with provenance + caveats). `product_id: "all"` (default) or a specific id. |
-| `loan_calculator` | Amortise an amount over a term at a caller-supplied **illustrative** annual rate range; returns low/high estimates + disclaimer. |
-| `credit_compass` | **Demo** illustrative view: score (35–90), band, 3 factors (each with a signal), `demo: true`, disclaimer. Advertises an HTML widget via the Apps SDK. |
+| `iwoca_finance_estimator` | Guided journey in one widget: what you need → business details → **demo** Credit Compass estimate + a **rough, non-guaranteed** indicative monthly rate → daily-interest cost calculator (amortising, over-12-month fee) → application link for an exact rate. Advertises the widget via the Apps SDK. |
+
+The estimator merges the earlier separate `credit_compass` and `loan_calculator`
+tools into one build. Shared maths live in `src/finance.ts`.
 
 ## Tech stack
 
@@ -43,18 +47,19 @@ SDK-specific glue is isolated in one module (`src/appsSdk.ts`).
 
 ```
 src/
-  mcp.ts            # MCP server factory: 3 tools + widget resource
+  mcp.ts            # MCP server factory: tools + widget resource
   server.ts         # HTTP entry point (Streamable HTTP). Exports buildServer()
   stdio.ts          # stdio entry point (for the MCP Inspector)
-  config.ts         # data/widget paths (env config expands in M2)
+  config.ts         # data/widget paths, application URL (env config expands in M2)
   products.ts       # loads data/products.json
+  finance.ts        # shared maths: demo compass, indicative rate, amortising cost
   appsSdk.ts        # ISOLATED OpenAI Apps SDK keys (outputTemplate / skybridge)
   tools/
     getProductInfo.ts
-    loanCalculator.ts
-    creditCompass.ts
-data/products.json  # public product data — all placeholder [VERIFY] values
-widget/credit-compass.html  # self-contained Credit Compass widget (no external assets)
+    financeEstimator.ts
+data/products.json  # public product data (from iwoca.co.uk, with provenance)
+widget/iwoca-finance.html   # self-contained guided finance widget (no external assets)
+preview/index.html  # local preview page (npm run preview)
 test/               # node:test suites (mcp.test.ts, http.test.ts)
 ```
 
@@ -97,7 +102,7 @@ npm run inspector   # builds, then launches the Inspector on the stdio entry poi
 ```
 
 Open the printed URL, **Connect**, open **Tools → List Tools** (you should see
-`get_product_info`, `loan_calculator`, `credit_compass`), and call each by hand.
+`get_product_info` and `iwoca_finance_estimator`), and call each by hand.
 
 ## Endpoints
 

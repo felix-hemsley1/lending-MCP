@@ -19,14 +19,12 @@ import { WIDGET_DIR } from "./config.js";
  *  VERIFICATION NOTE (2026-08-09): the official docs host (developers.openai.com)
  *  was unreachable from this build environment (blocked by the network egress
  *  proxy), so the key names below were confirmed against SECONDARY sources only
- *  (community/tooling docs describing the Apps SDK "skybridge" convention). They
- *  are believed correct but MUST be re-verified by a human against the primary
- *  docs before submission.
+ *  and MUST be re-verified by a human against the primary docs before submission.
  *
  *  Conventions used (all beta, all subject to change):
  *   - A tool advertises an HTML widget by attaching, in its `_meta`, the key
  *     `openai/outputTemplate` set to a `ui://` resource URI.
- *   - That URI must resolve to an MCP resource whose `mimeType` is
+ *   - That URI resolves to an MCP resource whose `mimeType` is
  *     `text/html+skybridge`, whose body is a self-contained HTML document.
  *   - Inside the widget, the host exposes `window.openai` — in particular
  *     `window.openai.toolOutput` carries the tool's `structuredContent`.
@@ -39,53 +37,28 @@ export const OUTPUT_TEMPLATE_META_KEY = "openai/outputTemplate";
 /** MIME type the host expects for an Apps SDK (skybridge) HTML widget. */
 export const WIDGET_MIME_TYPE = "text/html+skybridge";
 
-/** Resource URI for the Credit Compass widget. */
-export const CREDIT_COMPASS_WIDGET_URI = "ui://widget/credit-compass.html";
+/** Resource URI for the unified iwoca finance widget. */
+export const IWOCA_FINANCE_WIDGET_URI = "ui://widget/iwoca-finance.html";
 
-/** Resource URI for the Loan Calculator widget. */
-export const LOAN_CALCULATOR_WIDGET_URI = "ui://widget/loan-calculator.html";
+const IWOCA_FINANCE_WIDGET_FILE = resolve(WIDGET_DIR, "iwoca-finance.html");
 
-const CREDIT_COMPASS_WIDGET_FILE = resolve(WIDGET_DIR, "credit-compass.html");
-const LOAN_CALCULATOR_WIDGET_FILE = resolve(WIDGET_DIR, "loan-calculator.html");
-
-/** Read the widget HTML from disk (small files, read on demand). */
-export function readCreditCompassWidget(): string {
-  return readFileSync(CREDIT_COMPASS_WIDGET_FILE, "utf8");
+/** Read the widget HTML from disk (small file, read on demand). */
+export function readIwocaFinanceWidget(): string {
+  return readFileSync(IWOCA_FINANCE_WIDGET_FILE, "utf8");
 }
 
-export function readLoanCalculatorWidget(): string {
-  return readFileSync(LOAN_CALCULATOR_WIDGET_FILE, "utf8");
-}
-
-/**
- * The `_meta` block to attach to the credit_compass tool definition so a host
- * that understands the Apps SDK will render the widget. A plain MCP client that
- * does not understand this key simply ignores it and uses the text /
- * structuredContent instead.
- */
-export const creditCompassToolMeta = {
-  [OUTPUT_TEMPLATE_META_KEY]: CREDIT_COMPASS_WIDGET_URI,
+/** The `_meta` block to attach to the finance estimator tool definition. */
+export const iwocaFinanceToolMeta = {
+  [OUTPUT_TEMPLATE_META_KEY]: IWOCA_FINANCE_WIDGET_URI,
 } as const;
 
-/** The `_meta` block to attach to the loan_calculator tool definition. */
-export const loanCalculatorToolMeta = {
-  [OUTPUT_TEMPLATE_META_KEY]: LOAN_CALCULATOR_WIDGET_URI,
-} as const;
-
-/** Descriptors for the widgets as MCP resources (for resources/list). */
-export const creditCompassWidgetResource = {
-  uri: CREDIT_COMPASS_WIDGET_URI,
-  name: "iwoca Credit Compass widget",
+/** Descriptor for the widget as an MCP resource (for resources/list). */
+export const iwocaFinanceWidgetResource = {
+  uri: IWOCA_FINANCE_WIDGET_URI,
+  name: "iwoca finance estimator widget",
   description:
-    "Self-contained HTML widget that renders the illustrative iwoca Credit Compass demo output.",
-  mimeType: WIDGET_MIME_TYPE,
-} as const;
-
-export const loanCalculatorWidgetResource = {
-  uri: LOAN_CALCULATOR_WIDGET_URI,
-  name: "iwoca Loan Calculator widget",
-  description:
-    "Self-contained interactive HTML widget: choose amount, monthly rate and term, " +
-    "and see the illustrative daily-interest cost, including early-repayment savings.",
+    "Self-contained interactive HTML widget: a guided journey from what you need " +
+    "and your business details, to an illustrative Credit Compass estimate and rough " +
+    "indicative rate, a daily-interest cost calculator, and an application link.",
   mimeType: WIDGET_MIME_TYPE,
 } as const;

@@ -34,11 +34,18 @@ so the same server can back a Claude connector.
 
 ### M1 — Baseline + test harness (done)
 
-- Three read-only tools: `get_product_info`, `loan_calculator`, `credit_compass`.
-- `data/products.json` — public product data, all `[VERIFY]` placeholders.
-- `widget/credit-compass.html` — self-contained widget (no external assets).
+- Read-only tools: `get_product_info` and `iwoca_finance_estimator`.
+- `iwoca_finance_estimator` is one guided build (needs → business → demo Credit
+  Compass estimate + rough non-guaranteed indicative rate → daily-interest cost
+  calculator with over-12-month fee → application link). It merges the earlier
+  `credit_compass` and `loan_calculator` tools; shared maths in `src/finance.ts`.
+- `data/products.json` — public product data (from iwoca.co.uk, with provenance).
+- `widget/iwoca-finance.html` — self-contained guided widget (no external assets).
 - OpenAI Apps SDK glue isolated in `src/appsSdk.ts`.
 - `node:test` suite (`test/`) + `npm test` + GitHub Actions (`.github/workflows/ci.yml`).
+
+Open items: the application link is a placeholder (`IWOCA_APPLICATION_URL`) pending
+the real iwoca application URL; brand red / logo are approximations.
 
 ## Submission checklist (for M6, do not submit yet)
 
