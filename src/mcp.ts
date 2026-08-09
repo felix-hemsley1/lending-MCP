@@ -2,32 +2,36 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
 import {
-  draftApplicationDefinition,
-  handleDraftApplication,
-} from "./tools/draftApplication.js";
+  getProductInfoDefinition,
+  handleGetProductInfo,
+} from "./tools/getProductInfo.js";
 import {
-  submitApplicationDefinition,
-  handleSubmitApplication,
-} from "./tools/submitApplication.js";
+  loanCalculatorDefinition,
+  handleLoanCalculator,
+} from "./tools/loanCalculator.js";
 import {
-  getApplicationStatusDefinition,
-  handleGetApplicationStatus,
-} from "./tools/getApplicationStatus.js";
-
-// Importing the tools transitively loads the SQLite layer, but pull it in
-// explicitly so the database file/schema is ready before any transport connects.
-import "./database.js";
+  creditCompassDefinition,
+  handleCreditCompass,
+} from "./tools/creditCompass.js";
+import {
+  creditCompassWidgetResource,
+  readCreditCompassWidget,
+  CREDIT_COMPASS_WIDGET_URI,
+  WIDGET_MIME_TYPE,
+} from "./appsSdk.js";
 
 export const SERVER_NAME = "iwoca-business-finance";
 export const SERVER_VERSION = "0.1.0";
 
 export const TOOLS = [
-  draftApplicationDefinition,
-  submitApplicationDefinition,
-  getApplicationStatusDefinition,
+  getProductInfoDefinition,
+  loanCalculatorDefinition,
+  creditCompassDefinition,
 ] as const;
 
 type ToolHandler = (
@@ -39,19 +43,21 @@ type ToolHandler = (
 }>;
 
 const HANDLERS: Record<string, ToolHandler> = {
-  draft_application: handleDraftApplication,
-  submit_application: handleSubmitApplication,
-  get_application_status: handleGetApplicationStatus,
+  get_product_info: handleGetProductInfo,
+  loan_calculator: handleLoanCalculator,
+  credit_compass: handleCreditCompass,
 };
 
 /**
- * Build a fresh MCP Server wired to the three iwoca tools. Each transport
- * (HTTP session or stdio) gets its own Server instance.
+ * Build a fresh MCP Server wired to the three read-only iwoca tools. Each
+ * transport (HTTP session or stdio) gets its own Server instance. The server is
+ * stateless and read-only: no PII, no persistence, no session state tied to a
+ * person (Phase 1).
  */
 export function createMcpServer(): Server {
   const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
-    { capabilities: { tools: {} } },
+    { capabilities: { tools: {}, resources: {} } },
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -60,8 +66,31 @@ export function createMcpServer(): Server {
       title: tool.title,
       description: tool.description,
       inputSchema: tool.inputSchema,
+      annotations: tool.annotations,
+      // _meta is only present on tools that declare an Apps SDK widget.
+      ...("_meta" in tool ? { _meta: tool._meta } : {}),
     })),
   }));
+
+  // Resources: only the Credit Compass HTML widget (Apps SDK output template).
+  server.setRequestHandler(ListResourcesRequestSchema, async () => ({
+    resources: [creditCompassWidgetResource],
+  }));
+
+  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    if (request.params.uri === CREDIT_COMPASS_WIDGET_URI) {
+      return {
+        contents: [
+          {
+            uri: CREDIT_COMPASS_WIDGET_URI,
+            mimeType: WIDGET_MIME_TYPE,
+            text: readCreditCompassWidget(),
+          },
+        ],
+      };
+    }
+    throw new Error(`Unknown resource '${request.params.uri}'.`);
+  });
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const handler = HANDLERS[request.params.name];

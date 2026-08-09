@@ -15,7 +15,7 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   process.stderr.write(
-    `${SERVER_NAME} v${SERVER_VERSION} ready on stdio (3 tools)\n`,
+    `${SERVER_NAME} v${SERVER_VERSION} ready on stdio (read-only: get_product_info, loan_calculator, credit_compass)\n`,
   );
 }
 

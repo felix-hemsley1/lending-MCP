@@ -1,0 +1,35 @@
+{
+  "disclaimer": "General product information only. This is not a financial promotion, a quote, or an offer of credit. Every value shown as \"[VERIFY]\" is a placeholder awaiting confirmation against iwoca's current published terms and must not be relied upon. Product availability, rates, limits, terms, fees, and eligibility are subject to status and iwoca's lending criteria.",
+  "products": [
+    {
+      "id": "flexi-loan",
+      "name": "Flexi-Loan",
+      "summary": "Flexible business loan / revolving credit facility for UK small businesses. [VERIFY this summary against iwoca's current product description before publishing.]",
+      "representative_example": "[VERIFY]",
+      "min_amount_gbp": "[VERIFY]",
+      "max_amount_gbp": "[VERIFY]",
+      "min_term_months": "[VERIFY]",
+      "max_term_months": "[VERIFY]",
+      "interest_rate": "[VERIFY]",
+      "fees": "[VERIFY]",
+      "early_repayment": "[VERIFY]",
+      "repayment": "[VERIFY]",
+      "eligibility": ["[VERIFY]"]
+    },
+    {
+      "id": "iwocapay",
+      "name": "iwocaPay",
+      "summary": "Business-to-business pay-later / instalment option at checkout for trade customers. [VERIFY this summary against iwoca's current product description before publishing.]",
+      "representative_example": "[VERIFY]",
+      "min_amount_gbp": "[VERIFY]",
+      "max_amount_gbp": "[VERIFY]",
+      "min_term_months": "[VERIFY]",
+      "max_term_months": "[VERIFY]",
+      "interest_rate": "[VERIFY]",
+      "fees": "[VERIFY]",
+      "early_repayment": "[VERIFY]",
+      "repayment": "[VERIFY]",
+      "eligibility": ["[VERIFY]"]
+    }
+  ]
+}
