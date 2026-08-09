@@ -29,9 +29,19 @@ export function clamp(n: number, lo: number, hi: number): number {
 
 // ---- Credit Compass (demo) -------------------------------------------------
 
+export interface CompassCompanyFacts {
+  company_name?: string;
+  company_number?: string;
+  company_status?: string;
+  date_of_creation?: string | null;
+  accounts_overdue?: boolean;
+}
+
 export interface CompassInputs {
   years_trading?: number;
   monthly_revenue_gbp?: number;
+  /** Public Companies House facts (from lookup_company) — echoed as inputs; the score stays a demo. */
+  companies_house?: CompassCompanyFacts;
 }
 
 export interface CompassFactor {
@@ -53,7 +63,7 @@ export function creditCompass(inputs: CompassInputs): {
   band: string;
   factors: CompassFactor[];
 } {
-  const { years_trading, monthly_revenue_gbp } = inputs;
+  const { years_trading, monthly_revenue_gbp, companies_house } = inputs;
   let score = BASE_SCORE;
 
   const tradingSignal: Signal =
@@ -78,6 +88,22 @@ export function creditCompass(inputs: CompassInputs): {
           : "watch";
   if (monthly_revenue_gbp !== undefined) {
     score += monthly_revenue_gbp >= 25_000 ? 10 : monthly_revenue_gbp >= 5_000 ? 3 : -6;
+  }
+
+  // Optional 4th factor from public Companies House FACTS (not a credit score).
+  // The adjustment is still the same illustrative demo logic as everything else.
+  let chFactor: CompassFactor | undefined;
+  if (companies_house) {
+    const status = (companies_house.company_status ?? "").toLowerCase();
+    const overdue = companies_house.accounts_overdue === true;
+    const active = status === "active";
+    const chSignal: Signal = active && !overdue ? "strong" : active ? "watch" : "watch";
+    score += active && !overdue ? 4 : active ? -6 : -10;
+    chFactor = {
+      name: "Companies House record",
+      signal: chSignal,
+      note: `Status: ${companies_house.company_status ?? "unknown"}; accounts overdue: ${overdue ? "yes" : "no"} (public register facts, not a credit check).`,
+    };
   }
 
   score = clamp(Math.round(score), SCORE_MIN, SCORE_MAX);
@@ -105,6 +131,7 @@ export function creditCompass(inputs: CompassInputs): {
       note: "Illustrative repayment headroom indicator (demo).",
     },
   ];
+  if (chFactor) factors.push(chFactor);
 
   return { score, band: bandFor(score), factors };
 }

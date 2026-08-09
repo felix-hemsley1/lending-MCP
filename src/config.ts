@@ -23,3 +23,13 @@ export const WIDGET_DIR = resolve(projectRoot, "widget");
 export const APPLICATION_URL =
   process.env.IWOCA_APPLICATION_URL ?? "https://www.iwoca.co.uk/apply/new";
 
+/**
+ * Companies House public API (verified 2026-08-09 against the developer docs:
+ * HTTP Basic auth, API key as username, blank password). The key is free from
+ * developer.company-information.service.gov.uk — set it via env, NEVER commit it.
+ */
+export const COMPANIES_HOUSE_API_BASE =
+  process.env.COMPANIES_HOUSE_API_BASE ??
+  "https://api.company-information.service.gov.uk";
+export const COMPANIES_HOUSE_API_KEY = process.env.COMPANIES_HOUSE_API_KEY ?? "";
+

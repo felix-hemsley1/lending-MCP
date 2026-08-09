@@ -38,7 +38,8 @@ or a cost view. `demo/index.html` is a scripted local mock of that experience.
 | --- | --- |
 | `get_iwoca_info` | Conversational knowledge: how it works, use cases, comparison (iwoca's published positioning), testimonials/Trustpilot, rates & fees, eligibility — from `data/knowledge.json` (sourced, with provenance; `[VERIFY]` marks unconfirmed content). |
 | `get_product_info` | Public product info from `data/products.json` (sourced from iwoca.co.uk, with provenance + caveats). |
-| `credit_compass` | **Demo** estimate widget: score (35–90), band, 3 factors, plus a **rough, non-guaranteed** indicative monthly rate. Fake illustrative logic — no real iwoca data. |
+| `lookup_company` | Public **Companies House** registry lookup (by number or name search). Returns only name, number, status, incorporation date, accounts-overdue flag — data-minimised. Registry facts, **not a credit score**. `openWorldHint: true` (external API). Needs a free `COMPANIES_HOUSE_API_KEY`. |
+| `credit_compass` | **Demo** estimate widget: score (35–90), band, factors, plus a **rough, non-guaranteed** indicative monthly rate. Fake illustrative logic — no real iwoca data. Can ingest `lookup_company` facts as a labelled input factor; the score stays the demo mock. |
 | `loan_calculator` | Cost widget: rate slider (1.5–5.7%/month, default the representative 3.3%, or the compass rate), term 12/24/48/60, daily interest on the reducing balance, over-12-month fee, early-repayment savings, apply link. |
 
 Shared maths live in `src/finance.ts`.
@@ -65,6 +66,7 @@ src/
   tools/
     getIwocaInfo.ts
     getProductInfo.ts
+    lookupCompany.ts     # Companies House public lookup (needs COMPANIES_HOUSE_API_KEY)
     creditCompass.ts
     loanCalculator.ts
 data/products.json   # public product data (from iwoca.co.uk, with provenance)
@@ -85,8 +87,20 @@ npm run dev        # tsx watch, hot-reload
 npm run build && npm start
 ```
 
-Defaults to `http://0.0.0.0:3000`. Env vars: `PORT` (3000), `HOST` (0.0.0.0),
-`LOG_LEVEL` (info). (Broader env config lands in M2.)
+Defaults to `http://0.0.0.0:3000`. Env vars (see `.env.example`): `PORT` (3000),
+`HOST` (0.0.0.0), `LOG_LEVEL` (info), `IWOCA_APPLICATION_URL`, and
+`COMPANIES_HOUSE_API_KEY`. (Broader env config lands in M2.)
+
+### Companies House lookup (public data)
+
+`lookup_company` calls the free [Companies House API](https://developer.company-information.service.gov.uk)
+(HTTP Basic auth, API key as username, blank password — verified 2026-08-09). Set
+`COMPANIES_HOUSE_API_KEY` to enable it; without a key the tool returns a clear
+"not configured" message. It returns **only** name, number, status, incorporation
+date, and the accounts-overdue flag (data minimisation) — these are **public
+registry facts, not a credit score**. The Compass can take them as a labelled
+input factor, but its score remains the demo mock. **Never commit the key** (`.env`
+is git-ignored; copy `.env.example` to `.env`).
 
 ## Local chat demo + widget preview
 
@@ -115,8 +129,8 @@ npm run inspector   # builds, then launches the Inspector on the stdio entry poi
 ```
 
 Open the printed URL, **Connect**, open **Tools → List Tools** (you should see
-`get_iwoca_info`, `get_product_info`, `credit_compass`, `loan_calculator`), and
-call each by hand.
+`get_iwoca_info`, `get_product_info`, `lookup_company`, `credit_compass`,
+`loan_calculator`), and call each by hand.
 
 ## Endpoints
 

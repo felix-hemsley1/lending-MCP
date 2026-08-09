@@ -28,7 +28,7 @@ so the same server can back a Claude connector.
 | M1 | Baseline + test harness (3 read-only tools, `npm test`, CI) | **Done** |
 | M2 | Config & hardening (env config, rate limiting, structured logging, graceful shutdown, Dockerfile) | Not started |
 | M3 | TypeScript migration / zod single source of truth (optional — the repo is already TS) | Optional |
-| M4 | Companies House lookup (`lookup_company`, public data only, API key in env) | Not started |
+| M4 | Companies House lookup (`lookup_company`, public data only, API key in env) | **Done** |
 | M5 | Developer Mode demo pack (`docs/demo.md`, tunnel steps, 6-prompt script) | Not started |
 | M6 | Submission artefacts (listing metadata, privacy field inventory, test cases, domain verification) — draft only | Not started |
 
@@ -54,6 +54,19 @@ pending the exact brand assets. Application link is set to
 `https://www.iwoca.co.uk/apply/new` (override via `IWOCA_APPLICATION_URL`).
 Named customer case studies in knowledge.json are `[VERIFY]` placeholders awaiting
 real permissioned quotes.
+
+### M4 — Companies House lookup (done)
+
+- `lookup_company` tool: public register lookup by company number or name search.
+- Data-minimised to name, number, status, incorporation date, accounts-overdue flag.
+- Companies House API base + auth verified against the developer docs (2026-08-09):
+  `https://api.company-information.service.gov.uk`, HTTP Basic, API key as username,
+  blank password. Key via `COMPANIES_HOUSE_API_KEY` (never committed); `.env.example` added.
+- `openWorldHint: true` on this tool (it calls an external API) — the others stay closed-world.
+- Compass can ingest these public facts as a labelled input factor; the score stays a demo mock.
+- Note: Companies House provides registry FACTS, **not a credit score**. Real credit
+  scores require a commercial bureau (Experian/Creditsafe/D&B) with a paid licence —
+  out of scope and would need explicit human sign-off (Ground Rule 6).
 
 ## Submission checklist (for M6, do not submit yet)
 

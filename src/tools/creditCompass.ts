@@ -30,10 +30,13 @@ export const creditCompassDefinition = {
     "Show the iwoca Credit Compass — a DEMO estimate of how a business might look, " +
     "using FAKE illustrative logic (no real iwoca data; a real version needs iwoca's " +
     "scoring API). Collect business details in conversation first (years trading, " +
-    "monthly revenue, business name) and pass them in. Returns a score (35-90), band, " +
-    "3 factors, and a ROUGH indicative monthly interest rate that is NOT a guarantee. " +
-    "If the user then wants to see costs, surface the loan_calculator with this rate. " +
-    "Always present the output as a demo estimate, never a credit outcome or an offer.",
+    "monthly revenue, business name). If the user names a real company, call " +
+    "lookup_company first and pass its public facts as companies_house — they are " +
+    "echoed as inputs and add a factor, but the score STAYS the demo mock (public " +
+    "register facts are not a credit score). Returns a score (35-90), band, factors, " +
+    "and a ROUGH indicative monthly interest rate that is NOT a guarantee. If the " +
+    "user then wants costs, surface loan_calculator with this rate. Always present " +
+    "the output as a demo estimate, never a credit outcome or an offer.",
   annotations: {
     readOnlyHint: true,
     openWorldHint: false,
@@ -59,15 +62,39 @@ export const creditCompassDefinition = {
         description: "Approximate monthly revenue in GBP (illustrative).",
         minimum: 0,
       },
+      companies_house: {
+        type: "object",
+        description:
+          "Public register facts from lookup_company (echoed as inputs; not a credit score).",
+        additionalProperties: false,
+        properties: {
+          company_name: { type: "string" },
+          company_number: { type: "string" },
+          company_status: { type: "string" },
+          date_of_creation: { type: ["string", "null"] },
+          accounts_overdue: { type: "boolean" },
+        },
+      },
     },
   },
 } as const;
+
+const chSchema = z
+  .object({
+    company_name: z.string().max(200).optional(),
+    company_number: z.string().max(10).optional(),
+    company_status: z.string().max(60).optional(),
+    date_of_creation: z.string().max(20).nullable().optional(),
+    accounts_overdue: z.boolean().optional(),
+  })
+  .optional();
 
 const inputSchema = z.object({
   business_name: z.string().trim().min(1).max(200).optional(),
   sector: z.string().trim().min(1).max(100).optional(),
   years_trading: z.number().min(0).max(100).optional(),
   monthly_revenue_gbp: z.number().min(0).optional(),
+  companies_house: chSchema,
 });
 
 export async function handleCreditCompass(rawArgs: unknown) {
@@ -84,16 +111,18 @@ export async function handleCreditCompass(rawArgs: unknown) {
     };
   }
 
-  const { business_name, sector, years_trading, monthly_revenue_gbp } = parsed.data;
-  const estimate = creditCompass({ years_trading, monthly_revenue_gbp });
+  const { business_name, sector, years_trading, monthly_revenue_gbp, companies_house } =
+    parsed.data;
+  const estimate = creditCompass({ years_trading, monthly_revenue_gbp, companies_house });
   const rate = indicativeMonthlyRate(estimate.score);
 
   const structuredContent = {
     demo: true as const,
     data_source: "fake" as const,
     requires_api_connection: true as const,
-    business_name: business_name ?? null,
+    business_name: business_name ?? companies_house?.company_name ?? null,
     sector: sector ?? null,
+    companies_house_inputs: companies_house ?? null,
     score: estimate.score,
     band: estimate.band,
     factors: estimate.factors,

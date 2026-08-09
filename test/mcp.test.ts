@@ -18,17 +18,22 @@ async function connectClient(): Promise<Client> {
   return client;
 }
 
-test("tools/list returns the 4 read-only tools", async () => {
+test("tools/list returns the 5 read-only tools with accurate annotations", async () => {
   const client = await connectClient();
   const { tools } = await client.listTools();
 
   assert.deepEqual(
     tools.map((t) => t.name).sort(),
-    ["credit_compass", "get_iwoca_info", "get_product_info", "loan_calculator"],
+    ["credit_compass", "get_iwoca_info", "get_product_info", "loan_calculator", "lookup_company"],
   );
   for (const tool of tools) {
     assert.equal(tool.annotations?.readOnlyHint, true, `${tool.name} readOnlyHint`);
-    assert.equal(tool.annotations?.openWorldHint, false, `${tool.name} openWorldHint`);
+  }
+  // lookup_company calls an external API, so it is openWorldHint: true; the rest closed-world.
+  const byName = Object.fromEntries(tools.map((t) => [t.name, t]));
+  assert.equal(byName.lookup_company.annotations?.openWorldHint, true);
+  for (const n of ["credit_compass", "get_iwoca_info", "get_product_info", "loan_calculator"]) {
+    assert.equal(byName[n].annotations?.openWorldHint, false, `${n} openWorldHint`);
   }
 });
 
@@ -119,6 +124,31 @@ test("credit_compass returns demo estimate + non-guaranteed indicative rate", as
   assert.equal(r.not_a_guarantee, true);
   assert.ok(r.low >= 1.5 && r.high <= 5.7 && r.mid >= r.low && r.mid <= r.high);
   assert.match(sc.disclaimer, /not a guarantee/i);
+});
+
+test("credit_compass ingests Companies House facts as a labelled factor (score stays demo)", async () => {
+  const client = await connectClient();
+  const result = await client.callTool({
+    name: "credit_compass",
+    arguments: {
+      years_trading: 4,
+      monthly_revenue_gbp: 30_000,
+      companies_house: {
+        company_name: "ACME TRADING LTD",
+        company_number: "01234567",
+        company_status: "active",
+        accounts_overdue: false,
+      },
+    },
+  });
+  const sc = result.structuredContent as {
+    demo: boolean;
+    companies_house_inputs: { company_number: string } | null;
+    factors: { name: string }[];
+  };
+  assert.equal(sc.demo, true); // still a demo, even with real public facts
+  assert.equal(sc.companies_house_inputs?.company_number, "01234567");
+  assert.ok(sc.factors.some((f) => /Companies House/i.test(f.name)));
 });
 
 test("credit_compass: stronger business → lower indicative rate; deterministic", async () => {

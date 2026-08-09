@@ -23,6 +23,10 @@ import {
   handleLoanCalculator,
 } from "./tools/loanCalculator.js";
 import {
+  lookupCompanyDefinition,
+  handleLookupCompany,
+} from "./tools/lookupCompany.js";
+import {
   creditCompassWidgetResource,
   loanCalculatorWidgetResource,
   readCreditCompassWidget,
@@ -44,6 +48,7 @@ export const SERVER_VERSION = "0.1.0";
 export const TOOLS = [
   getIwocaInfoDefinition,
   getProductInfoDefinition,
+  lookupCompanyDefinition,
   creditCompassDefinition,
   loanCalculatorDefinition,
 ] as const;
@@ -59,6 +64,7 @@ type ToolHandler = (
 const HANDLERS: Record<string, ToolHandler> = {
   get_iwoca_info: handleGetIwocaInfo,
   get_product_info: handleGetProductInfo,
+  lookup_company: handleLookupCompany,
   credit_compass: handleCreditCompass,
   loan_calculator: handleLoanCalculator,
 };
