@@ -1,0 +1,94 @@
+# iwoca ChatGPT App — Project Plan
+
+Building an iwoca app for the ChatGPT app directory: UK businesses ask about
+iwoca's products in natural language, run a loan repayment estimator, and view the
+**iwoca Credit Compass** (a clearly-labelled demo). Built on the standard MCP SDK
+so the same server can back a Claude connector.
+
+## Ground rules
+
+1. **Never invent iwoca figures.** Rates, limits, terms, eligibility stay as
+   `[VERIFY]` placeholders until a human replaces them with verified data.
+2. **Phase 1 = zero personal data.** No auth, no PII, no session state tied to a
+   person. If a task seems to need user data, stop and flag it.
+3. **Stay on the standard MCP SDK.** OpenAI Apps SDK-specific keys are isolated in
+   `src/appsSdk.ts`. Verify keys against <https://developers.openai.com/apps-sdk>
+   before relying on them (the SDK is beta and keys have changed).
+4. **Tool annotations must be accurate** — everything in Phase 1 is `readOnlyHint:
+   true`, `openWorldHint: false`.
+5. **Responses stay short, factual JSON** with disclaimers embedded in the output.
+   No internal IDs, telemetry, timestamps, or debug fields in tool responses.
+6. **Compass is a demo** — "demo / illustrative, not a credit decision" wording in
+   the tool description, tool output, and widget. Not wired to any real scoring.
+
+## Phases / milestones
+
+| # | Milestone | Status |
+| --- | --- | --- |
+| M1 | Baseline + test harness (3 read-only tools, `npm test`, CI) | **Done** |
+| M2 | Config & hardening (env config, rate limiting, structured logging, graceful shutdown, Dockerfile) | Not started |
+| M3 | TypeScript migration / zod single source of truth (optional — the repo is already TS) | Optional |
+| M4 | Companies House lookup (`lookup_company`, public data only, API key in env) | **Done** |
+| M5 | Developer Mode demo pack (`docs/demo.md`, tunnel steps, 6-prompt script) | Not started |
+| M6 | Submission artefacts (listing metadata, privacy field inventory, test cases, domain verification) — draft only | Not started |
+
+### M1 — Baseline + test harness (done, evolved chat-first)
+
+- Chat-first design: the host model carries the conversation and surfaces widgets
+  contextually. Read-only tools: `get_iwoca_info` (knowledge: how it works, use
+  cases, comparison, testimonials/Trustpilot, rates & fees, eligibility),
+  `get_product_info`, `credit_compass` (demo estimate + rough non-guaranteed
+  indicative rate), `loan_calculator` (daily-interest cost + fee + apply link).
+- Shared maths in `src/finance.ts`; rate curve anchored so the representative
+  3.3%/month is referenced in all copy and defaults.
+- `data/products.json` + `data/knowledge.json` — sourced content with provenance;
+  `[VERIFY]` marks unconfirmed items (esp. named testimonials — never invent).
+- Widgets: `widget/credit-compass.html`, `widget/loan-calculator.html` (compact
+  in-chat cards, self-contained). `demo/index.html` — scripted chat mock of the
+  full experience.
+- OpenAI Apps SDK glue isolated in `src/appsSdk.ts`.
+- `node:test` suite (`test/`) + `npm test` + GitHub Actions (`.github/workflows/ci.yml`).
+
+Open items: brand red (`~#c85f57`) and the logo (text wordmark) are approximations
+pending the exact brand assets. Application link is set to
+`https://www.iwoca.co.uk/apply/new` (override via `IWOCA_APPLICATION_URL`).
+Named customer case studies in knowledge.json are `[VERIFY]` placeholders awaiting
+real permissioned quotes.
+
+### M4 — Companies House lookup (done)
+
+- `lookup_company` tool: public register lookup by company number or name search.
+- Data-minimised to name, number, status, incorporation date, accounts-overdue flag.
+- Companies House API base + auth verified against the developer docs (2026-08-09):
+  `https://api.company-information.service.gov.uk`, HTTP Basic, API key as username,
+  blank password. Key via `COMPANIES_HOUSE_API_KEY` (never committed); `.env.example` added.
+- `openWorldHint: true` on this tool (it calls an external API) — the others stay closed-world.
+- Compass can ingest these public facts as a labelled input factor; the score stays a demo mock.
+- Note: Companies House provides registry FACTS, **not a credit score**. Real credit
+  scores require a commercial bureau (Experian/Creditsafe/D&B) with a paid licence —
+  out of scope and would need explicit human sign-off (Ground Rule 6).
+
+## Submission checklist (for M6, do not submit yet)
+
+- [ ] Listing metadata (name, subtitle, description, category)
+- [ ] Privacy-policy field inventory (every user-related field each tool returns)
+- [ ] 5 positive + 3 negative test cases with expected behaviour
+- [ ] Domain-verification token endpoint (confirm well-known path from current docs)
+- [ ] All `[VERIFY]` placeholders replaced with verified iwoca data by a human
+- [ ] Tool annotations re-checked against final behaviour
+- [ ] Apps SDK keys re-verified against the current primary docs
+
+## Risks / open items
+
+- **Apps SDK is beta.** Keys (`openai/outputTemplate`, `text/html+skybridge`,
+  `window.openai.*`) may change; keep them isolated and re-verify before submission.
+  (The official docs host was unreachable from the build environment when M1 was
+  written — keys were confirmed against secondary sources and need human re-check.)
+- **Product data provenance.** `data/products.json` was populated from iwoca.co.uk
+  on 2026-08-09 via domain-scoped web search (direct fetch was egress-blocked). It
+  carries a `source` block with URLs and caveats (representative-example total and
+  minimum-term wording vary across iwoca pages; sole-trader eligibility changed).
+  A human must re-read the live pages to confirm before submission; figures not
+  published as a single value remain `[VERIFY]`.
+- **`demo/index.html`** still depicts the earlier application-submission flow and is
+  separate from the MCP server; update or retire before any public showcase.

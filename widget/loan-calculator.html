@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>iwoca Loan Calculator</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f9fd;
+        --card: #e0eafb;
+        --card-border: #c6d6f1;
+        --fg: #14171d;
+        --muted: #454b57;
+        --iwoca-red: #c85f57;
+        --iwoca-red-soft: rgba(200, 95, 87, 0.14);
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--fg); padding: 14px; }
+      .wrap { max-width: 480px; margin: 0 auto; }
+      .brand { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+      .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; color: var(--iwoca-red); line-height: 1; }
+      .brand .tag { font-size: 12px; color: var(--muted); font-weight: 600; }
+      h1 { font-size: 16px; margin: 0 0 2px; }
+      h1 .kw { color: var(--iwoca-red); }
+      .sub { color: var(--muted); font-size: 12px; margin: 0 0 12px; }
+      .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+      label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+      .row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+      .val { color: var(--iwoca-red); font-weight: 800; }
+      input[type="number"] { width: 100%; padding: 8px 10px; border: 1px solid var(--card-border); border-radius: 8px; background: #fff; color: var(--fg); font-size: 15px; font-weight: 600; }
+      input[type="range"] { width: 100%; accent-color: var(--iwoca-red); margin: 6px 0 0; }
+      .scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 2px; }
+      .terms { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+      .term-btn, .toggle button { padding: 9px 0; border: 1px solid var(--card-border); background: #fff; color: var(--fg); border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; }
+      .term-btn[aria-pressed="true"], .toggle button[aria-pressed="true"] { background: var(--iwoca-red); color: #fff; border-color: var(--iwoca-red); }
+      .toggle { display: flex; gap: 8px; }
+      .toggle button { flex: 1; }
+      .result { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
+      .result .k { color: var(--muted); }
+      .result .v { font-weight: 700; }
+      .result.big .v { color: var(--iwoca-red); font-size: 17px; font-weight: 800; }
+      .saving { color: var(--iwoca-red); font-weight: 800; }
+      .hidden { display: none; }
+      .hint { font-size: 11px; color: var(--muted); margin: 6px 0 0; }
+      .early-row { display: flex; gap: 8px; margin-top: 8px; }
+      .early-row input { flex: 1; min-width: 0; padding: 12px; font-size: 16px; }
+      .early-row select { flex: 0 0 44%; padding: 12px 10px; border: 1px solid var(--card-border); border-radius: 8px; background: #fff; color: var(--fg); font-size: 15px; font-weight: 700; }
+      .sched-wrap { max-height: 170px; overflow-y: auto; margin-top: 8px; border: 1px solid var(--card-border); border-radius: 8px; background: #fff; }
+      table.sched { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+      table.sched th, table.sched td { padding: 5px 9px; text-align: right; }
+      table.sched th:first-child, table.sched td:first-child { text-align: left; }
+      table.sched thead th { position: sticky; top: 0; background: #fff; color: var(--muted); font-weight: 700; border-bottom: 1px solid var(--card-border); }
+      table.sched td { border-bottom: 1px solid #eef2fb; }
+      table.sched td.int { color: var(--iwoca-red); font-weight: 700; }
+      .apply { display: block; padding: 12px; border-radius: 10px; background: var(--iwoca-red); color: #fff; font-size: 15px; font-weight: 800; text-align: center; text-decoration: none; margin-top: 4px; }
+      .apply-note { font-size: 11px; color: var(--muted); text-align: center; margin: 6px 0 0; }
+      .disclaimer { margin-top: 12px; font-size: 10.5px; color: var(--muted); border-top: 1px solid var(--card-border); padding-top: 8px; line-height: 1.5; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="brand"><span class="logo">iwoca</span><span class="tag">Loan Calculator</span></div>
+      <h1>What could a loan <span class="kw">cost</span>?</h1>
+      <p class="sub">Illustrative only — interest is calculated daily on your outstanding balance. Rates here are rough estimates, not a guarantee.</p>
+
+      <div class="card">
+        <label for="amount">Amount (£)</label>
+        <input id="amount" type="number" min="1000" max="1000000" step="500" value="50000" />
+      </div>
+
+      <div class="card">
+        <div class="row"><label for="rate">Monthly interest rate</label><span class="val"><span id="rateVal">3.3</span>% / month</span></div>
+        <input id="rate" type="range" min="1.5" max="5.7" step="0.1" value="3.3" />
+        <div class="scale"><span>1.5%</span><span>5.7%</span></div>
+        <p class="hint" id="rateHint">iwoca's representative rate is 3.3%/month. Your actual rate is confirmed after applying.</p>
+      </div>
+
+      <div class="card">
+        <label>Term</label>
+        <div class="terms" id="terms">
+          <button class="term-btn" data-term="12" type="button">12 mo</button>
+          <button class="term-btn" data-term="24" type="button" aria-pressed="true">24 mo</button>
+          <button class="term-btn" data-term="48" type="button">48 mo</button>
+          <button class="term-btn" data-term="60" type="button">60 mo</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label>Your repayment schedule (full term)</label>
+        <div class="result"><span class="k">Monthly repayment</span><span class="v" id="monthly">–</span></div>
+        <div class="result"><span class="k">Total interest</span><span class="v" id="fullInterest">–</span></div>
+        <div class="result hidden" id="feeRow"><span class="k" id="feeLabel">Additional fee</span><span class="v" id="feeVal">–</span></div>
+        <div class="result big"><span class="k">Total repayable</span><span class="v" id="fullTotal">–</span></div>
+        <p class="hint">Interest is charged on your outstanding balance, so each repayment's interest is a little lower than the last.</p>
+        <div class="sched-wrap"><table class="sched"><thead><tr><th>Mo.</th><th>Interest</th><th>Principal</th><th>Balance</th></tr></thead><tbody id="scheduleBody"></tbody></table></div>
+      </div>
+
+      <div class="card">
+        <label>Do you plan to repay early? <span style="font-weight:600;color:var(--muted)">(No fees.)</span></label>
+        <div class="toggle" id="earlyToggle">
+          <button data-early="no" type="button" aria-pressed="true">No</button>
+          <button data-early="yes" type="button">Yes</button>
+        </div>
+        <div id="earlyBlock" class="hidden">
+          <p class="hint">You only pay interest for the days you use the money.</p>
+          <label style="margin-top:8px">Repay after</label>
+          <div class="early-row">
+            <input id="earlyN" type="number" min="1" step="1" value="3" />
+            <select id="earlyUnit">
+              <option value="1">days</option><option value="7" selected>weeks</option><option value="30">months</option>
+            </select>
+          </div>
+          <div style="margin-top:10px">
+            <div class="result"><span class="k">Days until repaid</span><span class="v" id="earlyDays">–</span></div>
+            <div class="result"><span class="k">Interest for those days</span><span class="v" id="earlyInterest">–</span></div>
+            <div class="result hidden" id="earlyFeeRow"><span class="k" id="earlyFeeLabel">Additional fee</span><span class="v" id="earlyFeeVal">–</span></div>
+            <div class="result big"><span class="k">Total repayable</span><span class="v" id="earlyTotal">–</span></div>
+            <div class="result"><span class="k">You save (interest) vs full term</span><span class="v saving" id="earlySaving">–</span></div>
+          </div>
+        </div>
+      </div>
+
+      <a class="apply" id="applyLink" href="https://www.iwoca.co.uk/apply/new" target="_blank" rel="noopener">Get an exact rate — apply with iwoca</a>
+      <p class="apply-note">A few minutes, no obligation. iwoca confirms your actual amount, rate and terms.</p>
+
+      <p class="disclaimer" id="disclaimer"></p>
+    </div>
+
+    <script>
+      var DAYS_PER_MONTH = 30;
+      var DEFAULT_DISCLAIMER =
+        "Illustrative estimate only — not a quote, an offer, or a financial promotion from iwoca. " +
+        "Interest is charged daily on the outstanding balance ((monthly rate / 30) per day), so the " +
+        "interest part of each repayment falls over time. Borrowing over 12 months may incur an " +
+        "additional fee (typically 5% for 13-24 months, 6% for longer). Repaying early has no fee — " +
+        "you only pay interest up to the day you settle. Any rate here is a rough, non-guaranteed " +
+        "estimate (iwoca's representative rate is 3.3% per month); your actual amount, rate and terms " +
+        "are confirmed by iwoca after assessment.";
+
+      var state = { amount: 50000, rate: 3.3, term: 24, early: false, earlyN: 3, earlyUnit: 7, applyUrl: "https://www.iwoca.co.uk/apply/new" };
+
+      function gbp(n) { return "£" + (Math.round(n * 100) / 100).toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+      function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+      function feePct(term) { return term <= 12 ? 0 : term <= 24 ? 5 : 6; }
+      function monthlyPayment(P, i, n) { return i === 0 ? P / n : (P * i) / (1 - Math.pow(1 + i, -n)); }
+      function schedule(P, i, pay, n) {
+        var rows = [], bal = P;
+        for (var m = 1; m <= n; m++) { var it = bal * i, pr = pay - it; bal -= pr; if (bal < 0.005) bal = 0; rows.push({ m: m, it: it, pr: pr, bal: bal }); }
+        return rows;
+      }
+      function earlySettlement(P, i, pay, days) {
+        var dr = i / DAYS_PER_MONTH, fm = Math.floor(days / DAYS_PER_MONTH), rem = days - fm * DAYS_PER_MONTH, bal = P, paid = 0;
+        for (var m = 0; m < fm && bal > 0; m++) { bal = bal + bal * i - pay; if (bal < 0) bal = 0; paid += pay; }
+        var tot = paid + bal + bal * dr * rem;
+        return { totalRepaid: tot, interestPaid: Math.max(0, tot - P) };
+      }
+
+      function seedFromHost() {
+        try {
+          var d = window.openai && window.openai.toolOutput;
+          if (!d) return;
+          if (typeof d.amount_gbp === "number") state.amount = d.amount_gbp;
+          if (typeof d.monthly_rate_pct === "number") state.rate = clamp(d.monthly_rate_pct, 1.5, 5.7);
+          if ([12, 24, 48, 60].indexOf(d.term_months) >= 0) state.term = d.term_months;
+          if (d.early_repayment && typeof d.early_repayment.days === "number") { state.early = true; state.earlyN = d.early_repayment.days; state.earlyUnit = 1; }
+          if (typeof d.application_url === "string") state.applyUrl = d.application_url;
+          if (typeof d.disclaimer === "string" && d.disclaimer) DEFAULT_DISCLAIMER = d.disclaimer;
+        } catch (e) {}
+      }
+
+      function setFeeRow(rowId, labelId, valId, fee, pct) {
+        var row = document.getElementById(rowId);
+        if (fee > 0) { row.className = "result"; document.getElementById(labelId).textContent = "Additional fee (" + pct + "%)"; document.getElementById(valId).textContent = gbp(fee); }
+        else { row.className = "result hidden"; }
+      }
+
+      function syncControls() {
+        document.getElementById("amount").value = state.amount;
+        document.getElementById("rate").value = state.rate;
+        document.getElementById("rateVal").textContent = state.rate;
+        var btns = document.querySelectorAll(".term-btn");
+        for (var i = 0; i < btns.length; i++) btns[i].setAttribute("aria-pressed", String(Number(btns[i].dataset.term) === state.term));
+        document.querySelector('[data-early="yes"]').setAttribute("aria-pressed", String(state.early));
+        document.querySelector('[data-early="no"]').setAttribute("aria-pressed", String(!state.early));
+        document.getElementById("earlyBlock").className = state.early ? "" : "hidden";
+        document.getElementById("earlyN").value = state.earlyN;
+        document.getElementById("earlyUnit").value = String(state.earlyUnit);
+        document.getElementById("applyLink").href = state.applyUrl;
+      }
+
+      function compute() {
+        var amount = clamp(Number(state.amount) || 0, 0, 1000000);
+        var i = state.rate / 100;
+        var pay = monthlyPayment(amount, i, state.term);
+        var fullInterest = pay * state.term - amount;
+        var pct = feePct(state.term), fee = amount * (pct / 100);
+        document.getElementById("monthly").textContent = gbp(pay);
+        document.getElementById("fullInterest").textContent = gbp(fullInterest);
+        setFeeRow("feeRow", "feeLabel", "feeVal", fee, pct);
+        document.getElementById("fullTotal").textContent = gbp(pay * state.term + fee);
+
+        var rows = schedule(amount, i, pay, state.term), html = "";
+        for (var r = 0; r < rows.length; r++) html += "<tr><td>" + rows[r].m + '</td><td class="int">' + gbp(rows[r].it) + "</td><td>" + gbp(rows[r].pr) + "</td><td>" + gbp(Math.max(0, rows[r].bal)) + "</td></tr>";
+        document.getElementById("scheduleBody").innerHTML = html;
+
+        if (state.early) {
+          var days = clamp(Math.round((Number(state.earlyN) || 0) * state.earlyUnit), 1, state.term * DAYS_PER_MONTH);
+          var e = earlySettlement(amount, i, pay, days);
+          document.getElementById("earlyDays").textContent = days + " day" + (days === 1 ? "" : "s");
+          document.getElementById("earlyInterest").textContent = gbp(e.interestPaid);
+          setFeeRow("earlyFeeRow", "earlyFeeLabel", "earlyFeeVal", fee, pct);
+          document.getElementById("earlyTotal").textContent = gbp(e.totalRepaid + fee);
+          document.getElementById("earlySaving").textContent = gbp(fullInterest - e.interestPaid);
+        }
+        document.getElementById("disclaimer").textContent = DEFAULT_DISCLAIMER;
+      }
+
+      function wire() {
+        document.getElementById("amount").addEventListener("input", function (e) { state.amount = Number(e.target.value) || 0; compute(); });
+        document.getElementById("rate").addEventListener("input", function (e) { state.rate = Number(e.target.value); document.getElementById("rateVal").textContent = state.rate; compute(); });
+        document.getElementById("terms").addEventListener("click", function (e) { var b = e.target.closest(".term-btn"); if (!b) return; state.term = Number(b.dataset.term); syncControls(); compute(); });
+        document.getElementById("earlyToggle").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; state.early = b.dataset.early === "yes"; syncControls(); compute(); });
+        document.getElementById("earlyN").addEventListener("input", function (e) { state.earlyN = Number(e.target.value) || 0; compute(); });
+        document.getElementById("earlyUnit").addEventListener("change", function (e) { state.earlyUnit = Number(e.target.value); compute(); });
+      }
+
+      seedFromHost();
+      syncControls();
+      wire();
+      compute();
+    </script>
+  </body>
+</html>

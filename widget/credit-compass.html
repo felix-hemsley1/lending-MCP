@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>iwoca Credit Compass (demo)</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f9fd;
+        --card: #e0eafb;
+        --card-border: #c6d6f1;
+        --fg: #14171d;
+        --muted: #454b57;
+        --iwoca-red: #c85f57;
+        --iwoca-red-soft: rgba(200, 95, 87, 0.14);
+        --strong: #2f9e6a;
+        --steady: #c98a1a;
+        --watch: #c0483b;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--fg); padding: 14px; }
+      .wrap { max-width: 480px; margin: 0 auto; }
+      .brand { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+      .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; color: var(--iwoca-red); line-height: 1; }
+      .brand .tag { font-size: 12px; color: var(--muted); font-weight: 600; }
+      .demo-banner {
+        background: var(--iwoca-red-soft); border: 1px solid var(--iwoca-red); color: var(--iwoca-red);
+        border-radius: 10px; padding: 7px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+        text-align: center; margin-bottom: 12px;
+      }
+      h1 { font-size: 16px; margin: 0 0 10px; }
+      h1 .kw { color: var(--iwoca-red); }
+      .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+      .score-row { display: flex; align-items: center; gap: 14px; }
+      .score { font-size: 36px; font-weight: 800; line-height: 1; min-width: 84px; text-align: center; color: var(--iwoca-red); }
+      .score small { display: block; font-size: 11px; color: var(--muted); font-weight: 500; }
+      .band { display: inline-block; padding: 3px 10px; border-radius: 999px; background: #fff; border: 1px solid var(--card-border); font-size: 12px; font-weight: 700; color: var(--iwoca-red); }
+      .bar { height: 8px; background: #fff; border-radius: 999px; overflow: hidden; flex: 1; border: 1px solid var(--card-border); }
+      .bar > span { display: block; height: 100%; background: var(--iwoca-red); }
+      .factors { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 6px; }
+      .factor { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--card-border); border-radius: 10px; padding: 7px 10px; }
+      .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+      .dot.strong { background: var(--strong); } .dot.steady { background: var(--steady); } .dot.watch { background: var(--watch); }
+      .factor .name { font-weight: 700; font-size: 13px; }
+      .factor .note { color: var(--muted); font-size: 11px; }
+      .factor .sig { margin-left: auto; font-size: 11px; text-transform: capitalize; color: var(--iwoca-red); font-weight: 700; }
+      .rate-card { text-align: center; }
+      .rate-card label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+      .rate-big { font-size: 28px; font-weight: 800; color: var(--iwoca-red); line-height: 1.1; }
+      .hint { font-size: 11px; color: var(--muted); margin: 6px 0 0; }
+      .next { font-size: 12px; color: var(--muted); text-align: center; margin: 10px 0 0; }
+      .next b { color: var(--iwoca-red); }
+      .disclaimer { margin-top: 12px; font-size: 10.5px; color: var(--muted); border-top: 1px solid var(--card-border); padding-top: 8px; line-height: 1.5; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="brand"><span class="logo">iwoca</span><span class="tag">Credit Compass</span></div>
+      <div class="demo-banner">DEMO — FAKE DATA · NOT A CREDIT DECISION</div>
+      <h1 id="title">iwoca <span class="kw">Credit Compass</span></h1>
+      <div class="card">
+        <div class="score-row">
+          <div class="score"><span id="score">–</span><small>/ 100</small></div>
+          <div style="flex:1">
+            <div style="margin-bottom:8px"><span class="band" id="band">–</span></div>
+            <div class="bar"><span id="bar" style="width:0%"></span></div>
+          </div>
+        </div>
+        <ul class="factors" id="factors"></ul>
+      </div>
+      <div class="card rate-card">
+        <label>Rough indicative interest rate</label>
+        <div class="rate-big"><span id="rateMid">–</span>% <span style="font-size:14px">/ month</span></div>
+        <p class="hint" id="rateRange">—</p>
+        <p class="hint">Not a guarantee — iwoca's representative rate is <b>3.3%/month</b>; your actual rate is confirmed after applying.</p>
+      </div>
+      <p class="next">Want to see what this could cost? <b>Ask to see the loan calculator</b> — it'll use this rate.</p>
+      <p class="disclaimer" id="disclaimer"></p>
+    </div>
+
+    <script>
+      // Sample used ONLY outside an Apps SDK host (local preview). In ChatGPT the
+      // credit_compass tool supplies window.openai.toolOutput.
+      var SAMPLE = {
+        demo: true, business_name: "Sample Trading Ltd", score: 71, band: "Good",
+        factors: [
+          { name: "Trading history", signal: "strong", note: "4 year(s) trading (illustrative)." },
+          { name: "Cash flow", signal: "steady", note: "~£18,000/month revenue (illustrative)." },
+          { name: "Affordability headroom", signal: "steady", note: "Illustrative repayment headroom indicator (demo)." }
+        ],
+        indicative_monthly_rate_pct: { low: 2.89, mid: 3.29, high: 3.69, not_a_guarantee: true },
+        disclaimer: "DEMO / ILLUSTRATIVE ONLY — THIS IS FAKE DATA (local preview sample). Not a credit score or decision; no real iwoca scoring or data. The rate shown is a rough estimate, not a guarantee."
+      };
+
+      function getData() {
+        try { if (window.openai && window.openai.toolOutput) return window.openai.toolOutput; } catch (e) {}
+        return SAMPLE;
+      }
+
+      function render(d) {
+        if (!d) return;
+        var score = Number(d.score) || 0;
+        document.getElementById("score").textContent = d.score == null ? "" : String(d.score);
+        document.getElementById("band").textContent = d.band == null ? "" : String(d.band);
+        document.getElementById("bar").style.width = Math.max(0, Math.min(100, score)) + "%";
+        if (d.business_name) {
+          document.getElementById("title").innerHTML =
+            'iwoca <span class="kw">Credit Compass</span> — ' +
+            String(d.business_name).replace(/[&<>"']/g, function (c) {
+              return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+            });
+        }
+        var list = document.getElementById("factors");
+        list.innerHTML = "";
+        (Array.isArray(d.factors) ? d.factors : []).forEach(function (f) {
+          var sig = ["strong", "steady", "watch"].indexOf(f.signal) >= 0 ? f.signal : "steady";
+          var li = document.createElement("li");
+          li.className = "factor";
+          var name = document.createElement("span"); name.className = "name"; name.textContent = f.name || "";
+          var note = document.createElement("span"); note.className = "note"; note.textContent = f.note || "";
+          var dot = document.createElement("span"); dot.className = "dot " + sig;
+          var text = document.createElement("span"); text.appendChild(name); text.appendChild(document.createElement("br")); text.appendChild(note);
+          var sigEl = document.createElement("span"); sigEl.className = "sig"; sigEl.textContent = sig;
+          li.appendChild(dot); li.appendChild(text); li.appendChild(sigEl);
+          list.appendChild(li);
+        });
+        var r = d.indicative_monthly_rate_pct || {};
+        document.getElementById("rateMid").textContent = r.mid != null ? r.mid : "–";
+        document.getElementById("rateRange").textContent =
+          r.low != null && r.high != null
+            ? "Roughly " + r.low + "%–" + r.high + "% / month for a business like this (rough estimate only)."
+            : "";
+        document.getElementById("disclaimer").textContent = d.disclaimer || "";
+      }
+
+      render(getData());
+    </script>
+  </body>
+</html>

@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { randomUUID } from "node:crypto";
+import { pathToFileURL } from "node:url";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 
@@ -40,7 +41,7 @@ async function createSession(): Promise<{
   return { server, transport, sessionId: transport.sessionId ?? "" };
 }
 
-async function start() {
+export async function buildServer() {
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
 
   await app.register(cors, {
@@ -100,6 +101,11 @@ async function start() {
   app.get("/mcp", handleMcp);
   app.delete("/mcp", handleMcp);
 
+  return app;
+}
+
+async function start() {
+  const app = await buildServer();
   const port = Number(process.env.PORT ?? 3000);
   const host = process.env.HOST ?? "0.0.0.0";
 
@@ -109,8 +115,15 @@ async function start() {
   );
 }
 
-start().catch((err) => {
-  // eslint-disable-next-line no-console
-  console.error("Failed to start iwoca MCP server:", err);
-  process.exit(1);
-});
+// Only auto-start when run as the entry point, not when imported by tests.
+const invokedDirectly =
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (invokedDirectly) {
+  start().catch((err) => {
+    // eslint-disable-next-line no-console
+    console.error("Failed to start iwoca MCP server:", err);
+    process.exit(1);
+  });
+}

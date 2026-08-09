@@ -1,7 +1,7 @@
 {
   "name": "iwoca-chatgpt-mcp",
   "version": "0.1.0",
-  "description": "Proof of concept MCP server that lets a user start an iwoca business finance application from inside ChatGPT.",
+  "description": "Proof of concept MCP server exposing read-only iwoca product info, a loan repayment estimator, and the illustrative iwoca Credit Compass for use from ChatGPT or a Claude connector.",
   "private": true,
   "type": "module",
   "main": "dist/server.js",
@@ -12,7 +12,8 @@
     "dev": "tsx watch src/server.ts",
     "dev:stdio": "tsx src/stdio.ts",
     "inspector": "npm run build && npx @modelcontextprotocol/inspector node dist/stdio.js",
-    "demo": "npx --yes serve demo -p 3456",
+    "preview": "npx --yes serve . -l 4321",
+    "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "engines": {
@@ -21,12 +22,10 @@
   "dependencies": {
     "@fastify/cors": "^9.0.1",
     "@modelcontextprotocol/sdk": "^1.0.4",
-    "better-sqlite3": "^11.3.0",
     "fastify": "^4.28.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^20.14.10",
     "tsx": "^4.19.0",
     "typescript": "^5.5.4"

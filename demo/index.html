@@ -1,1491 +1,444 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ChatGPT</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>iwoca — business finance assistant (demo)</title>
     <style>
       :root {
-        --bg-main: #212121;
-        --bg-sidebar: #171717;
-        --bg-user-row: #303030;
-        --bg-composer: #303030;
-        --bg-hover: #2a2a2a;
-        --text-primary: #ececec;
-        --text-secondary: #b4b4b4;
-        --text-muted: #8e8e8e;
-        --border: #424242;
-        --border-subtle: #333;
-        --accent: #00a86b;
-        --accent-soft: rgba(0, 168, 107, 0.14);
-        --status-review: #d97706;
-        --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          Roboto, Helvetica, Arial, sans-serif;
+        color-scheme: light;
+        --bg: #f7f9fd;
+        --card: #e0eafb;
+        --card-border: #c6d6f1;
+        --fg: #14171d;
+        --muted: #454b57;
+        --iwoca-red: #c85f57;
+        --iwoca-red-soft: rgba(200, 95, 87, 0.14);
+        --strong: #2f9e6a;
+        --steady: #c98a1a;
+        --watch: #c0483b;
       }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--fg); display: flex; flex-direction: column; }
 
-      * { box-sizing: border-box; margin: 0; padding: 0; }
+      header { background: #fff; border-bottom: 1px solid var(--card-border); padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+      .logo { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; color: var(--iwoca-red); line-height: 1; }
+      header .tag { font-size: 13px; color: var(--muted); font-weight: 600; }
+      .demo-pill { margin-left: auto; background: var(--iwoca-red-soft); border: 1px solid var(--iwoca-red); color: var(--iwoca-red); border-radius: 999px; padding: 4px 12px; font-size: 11px; font-weight: 700; }
 
-      body {
-        font-family: var(--font);
-        background: var(--bg-main);
-        color: var(--text-primary);
-        height: 100vh;
-        overflow: hidden;
+      #chat { flex: 1; overflow-y: auto; padding: 18px 16px 8px; }
+      .inner { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+      .msg { max-width: 85%; border-radius: 14px; padding: 10px 14px; font-size: 14px; line-height: 1.55; white-space: pre-line; }
+      .msg.user { align-self: flex-end; background: var(--iwoca-red); color: #fff; border-bottom-right-radius: 4px; }
+      .msg.bot { align-self: flex-start; background: #fff; border: 1px solid var(--card-border); border-bottom-left-radius: 4px; }
+      .msg.bot b { color: var(--iwoca-red); }
+
+      .widget-card { align-self: flex-start; width: 100%; max-width: 480px; background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; }
+      .widget-card h3 { margin: 0 0 2px; font-size: 15px; }
+      .widget-card h3 .kw { color: var(--iwoca-red); }
+      .wc-sub { font-size: 11px; color: var(--muted); margin: 0 0 10px; }
+      .banner { background: var(--iwoca-red-soft); border: 1px solid var(--iwoca-red); color: var(--iwoca-red); border-radius: 8px; padding: 6px 10px; font-size: 10.5px; font-weight: 700; text-align: center; margin-bottom: 10px; }
+      .widget-card label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 5px; }
+      .widget-card input[type="number"], .widget-card input[type="text"], .widget-card select {
+        width: 100%; padding: 8px 10px; border: 1px solid var(--card-border); border-radius: 8px; background: #fff; font-size: 14px; font-weight: 600; color: var(--fg);
       }
-
-      .app {
-        display: grid;
-        grid-template-columns: 260px 1fr;
-        height: 100vh;
-      }
-
-      .sidebar {
-        background: var(--bg-sidebar);
-        border-right: 1px solid var(--border-subtle);
-        display: flex;
-        flex-direction: column;
-        padding: 8px;
-      }
-
-      .sidebar-top {
-        padding: 8px 4px 12px;
-      }
-
-      .sidebar-logo {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 10px;
-        font-size: 15px;
-        font-weight: 600;
-      }
-
-      .sidebar-logo svg { width: 22px; height: 22px; }
-
-      .new-chat {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        padding: 10px 12px;
-        border: none;
-        border-radius: 8px;
-        background: transparent;
-        color: var(--text-primary);
-        font-size: 14px;
-        cursor: pointer;
-        font-family: inherit;
-        margin-top: 4px;
-      }
-
-      .new-chat:hover { background: var(--bg-hover); }
-
-      .chat-history { flex: 1; overflow: auto; padding: 4px; }
-
-      .history-item {
-        padding: 10px 12px;
-        border-radius: 8px;
-        font-size: 14px;
-        color: var(--text-secondary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        cursor: default;
-      }
-
-      .history-item.active {
-        background: var(--bg-hover);
-        color: var(--text-primary);
-      }
-
-      .sidebar-footer {
-        padding: 12px;
-        font-size: 11px;
-        color: var(--text-muted);
-        border-top: 1px solid var(--border-subtle);
-      }
-
-      .main {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        height: 100vh;
-        background: var(--bg-main);
-      }
-
-      .topbar {
-        display: grid;
-        grid-template-columns: 1fr auto 1fr;
-        align-items: center;
-        padding: 10px 16px;
-        min-height: 52px;
-      }
-
-      .model-picker {
-        grid-column: 2;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border-radius: 8px;
-        font-size: 15px;
-        font-weight: 500;
-        cursor: default;
-      }
-
-      .model-picker:hover { background: var(--bg-hover); }
-
-      .topbar-actions {
-        grid-column: 3;
-        justify-self: end;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .connector-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 3px 8px;
-        border-radius: 6px;
-        background: var(--accent-soft);
-        color: var(--accent);
-        font-size: 11px;
-        font-weight: 500;
-      }
-
-      .connector-badge.hidden { display: none; }
-
-      .connector-dot {
-        width: 5px;
-        height: 5px;
-        border-radius: 50%;
-        background: var(--accent);
-      }
-
-      .demo-btn {
-        padding: 6px 12px;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-        background: transparent;
-        color: var(--text-secondary);
-        font-size: 12px;
-        cursor: pointer;
-        font-family: inherit;
-      }
-
-      .demo-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-
-      .chat-area {
-        flex: 1;
-        overflow-y: auto;
-        scroll-behavior: smooth;
-      }
-
-      .message-row {
-        width: 100%;
-        opacity: 0;
-        animation: fadeIn 0.3s ease forwards;
-      }
-
-      .message-row.user { background: var(--bg-user-row); }
-
-      @keyframes fadeIn { to { opacity: 1; } }
-
-      .message-inner {
-        max-width: 46rem;
-        margin: 0 auto;
-        padding: 20px 24px;
-        display: flex;
-        gap: 16px;
-        align-items: flex-start;
-      }
-
-      .message-row.user .message-inner {
-        justify-content: flex-end;
-      }
-
-      .message-row.user .message-content {
-        text-align: right;
-        max-width: 85%;
-      }
-
-      .avatar {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .avatar.assistant {
-        background: transparent;
-        color: var(--text-primary);
-      }
-
-      .avatar.assistant svg { width: 28px; height: 28px; }
-
-      .avatar.user {
-        background: #5c5c5c;
-        color: #fff;
-        font-size: 11px;
-        font-weight: 600;
-      }
-
-      .message-content { flex: 1; min-width: 0; }
-
-      .message-text {
-        font-size: 16px;
-        line-height: 1.7;
-        color: var(--text-primary);
-        white-space: pre-wrap;
-      }
-
-      .tool-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 12px;
-        padding: 6px 10px;
-        border-radius: 8px;
-        background: var(--bg-main);
-        border: 1px solid var(--border);
-        font-size: 13px;
-        color: var(--text-secondary);
-      }
-
-      .tool-chip svg { width: 14px; height: 14px; opacity: 0.7; }
-
-      .typing {
-        display: flex;
-        gap: 5px;
-        padding: 6px 0;
-      }
-
-      .typing span {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--text-muted);
-        animation: bounce 1.2s infinite;
-      }
-
-      .typing span:nth-child(2) { animation-delay: 0.15s; }
-      .typing span:nth-child(3) { animation-delay: 0.3s; }
-
-      @keyframes bounce {
-        0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
-        30% { transform: translateY(-4px); opacity: 1; }
-      }
-
-      .widget {
-        margin-top: 16px;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        overflow: hidden;
-        background: var(--bg-main);
-        max-width: 100%;
-      }
-
-      .widget-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px 18px;
-        border-bottom: 1px solid var(--border-subtle);
-      }
-
-      .widget-title { font-size: 14px; font-weight: 600; }
-
-      .widget-brand {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--accent);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
-
-      .widget-body { padding: 18px; }
-
-      .field-grid { display: grid; gap: 14px; }
-
-      .field { display: flex; flex-direction: column; gap: 3px; }
-
-      .field-label {
-        font-size: 11px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-      }
-
-      .field-value { font-size: 14px; }
-      .field-value.amount { font-size: 20px; font-weight: 600; color: var(--accent); }
-
-      .widget-actions {
-        display: flex;
-        gap: 8px;
-        padding: 14px 18px;
-        border-top: 1px solid var(--border-subtle);
-      }
-
-      .widget-btn {
-        flex: 1;
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        background: var(--bg-composer);
-        color: var(--text-primary);
-        font-size: 14px;
-        font-family: inherit;
-        cursor: pointer;
-      }
-
-      .widget-btn:hover { background: var(--bg-hover); }
-
-      .widget-btn.primary {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: #fff;
-      }
-
-      .status-tracker {
-        display: flex;
-        align-items: center;
-        margin-top: 8px;
-      }
-
-      .status-step {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        position: relative;
-      }
-
-      .status-step:not(:last-child)::after {
-        content: "";
-        position: absolute;
-        top: 10px;
-        left: 50%;
-        width: 100%;
-        height: 2px;
-        background: var(--border);
-        z-index: 0;
-      }
-
-      .status-step.done:not(:last-child)::after,
-      .status-step.active:not(:last-child)::after { background: var(--accent); }
-
-      .status-dot {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        border: 2px solid var(--border);
-        background: var(--bg-main);
-        position: relative;
-        z-index: 1;
-      }
-
-      .status-step.done .status-dot { border-color: var(--accent); background: var(--accent); }
-      .status-step.active .status-dot { border-color: var(--status-review); background: var(--status-review); }
-
-      .status-label {
-        font-size: 10px;
-        color: var(--text-muted);
-        text-align: center;
-        max-width: 72px;
-      }
-
-      .status-step.done .status-label,
-      .status-step.active .status-label { color: var(--text-secondary); }
-
-      .ref-pill {
-        display: inline-flex;
-        padding: 6px 12px;
-        border-radius: 8px;
-        background: var(--bg-composer);
-        font-size: 14px;
-        font-weight: 600;
-        margin-top: 6px;
-      }
-
-      .upload-zone {
-        margin-top: 14px;
-        padding: 28px 20px;
-        border: 1px dashed var(--border);
-        border-radius: 12px;
-        text-align: center;
-        color: var(--text-muted);
-        font-size: 13px;
-        cursor: pointer;
-        transition: border-color 0.15s, background 0.15s;
-      }
-
-      .upload-zone:hover,
-      .upload-zone.dragover {
-        border-color: var(--accent);
-        background: var(--accent-soft);
-        color: var(--text-secondary);
-      }
-
-      .upload-zone.uploading { pointer-events: none; opacity: 0.7; }
-
-      .upload-icon {
-        display: block;
-        margin: 0 auto 8px;
-        width: 24px;
-        height: 24px;
-        opacity: 0.5;
-      }
-
-      .file-list {
-        margin-top: 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .file-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
-        border-radius: 8px;
-        background: var(--bg-composer);
-        font-size: 13px;
-      }
-
-      .file-item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--accent); }
-
-      .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-      .file-size { color: var(--text-muted); font-size: 12px; }
-
-      .email-widget .email-meta {
-        display: grid;
-        gap: 6px;
-        padding-bottom: 14px;
-        margin-bottom: 14px;
-        border-bottom: 1px solid var(--border-subtle);
-        font-size: 12px;
-      }
-
-      .email-meta-row {
-        display: grid;
-        grid-template-columns: 52px 1fr;
-        gap: 8px;
-      }
-
-      .email-meta-label { color: var(--text-muted); }
-
-      .email-meta-value { color: var(--text-primary); word-break: break-word; }
-
-      .email-subject {
-        font-size: 15px;
-        font-weight: 600;
-        margin-bottom: 14px;
-        color: var(--text-primary);
-      }
-
-      .email-body {
-        font-size: 14px;
-        line-height: 1.65;
-        color: var(--text-secondary);
-        white-space: pre-line;
-      }
-
-      .email-body strong { color: var(--text-primary); font-weight: 600; }
-
-      .email-sent-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        margin-top: 14px;
-        padding: 6px 10px;
-        border-radius: 6px;
-        background: var(--accent-soft);
-        color: var(--accent);
-        font-size: 12px;
-        font-weight: 500;
-      }
-
-      .upload-progress {
-        margin-top: 10px;
-        height: 4px;
-        border-radius: 2px;
-        background: var(--border);
-        overflow: hidden;
-      }
-
-      .upload-progress-bar {
-        height: 100%;
-        background: var(--accent);
-        width: 0%;
-        transition: width 0.2s;
-      }
-
-      .suggestion-list { display: flex; flex-direction: column; gap: 10px; }
-
-      .suggestion-item {
-        padding: 14px 16px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: var(--bg-composer);
-        cursor: pointer;
-        text-align: left;
-        font-family: inherit;
-        color: inherit;
-        width: 100%;
-      }
-
-      .suggestion-item:hover { background: var(--bg-hover); }
-
-      .suggestion-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-      .suggestion-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
-
-      .composer-wrap {
-        padding: 12px 16px 20px;
-        background: linear-gradient(180deg, transparent, var(--bg-main) 20%);
-      }
-
-      .composer-inner {
-        max-width: 46rem;
-        margin: 0 auto;
-        display: flex;
-        align-items: flex-end;
-        gap: 4px;
-        padding: 10px 12px;
-        border-radius: 24px;
-        background: var(--bg-composer);
-        border: 1px solid var(--border-subtle);
-      }
-
-      .composer-inner:focus-within { border-color: var(--border); }
-
-      .composer-attach {
-        width: 36px;
-        height: 36px;
-        border: none;
-        border-radius: 50%;
-        background: transparent;
-        color: var(--text-muted);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        flex-shrink: 0;
-      }
-
-      .composer-attach:hover { background: var(--bg-hover); color: var(--text-primary); }
-
-      .composer-input {
-        flex: 1;
-        border: none;
-        background: transparent;
-        color: var(--text-primary);
-        font-size: 16px;
-        font-family: inherit;
-        resize: none;
-        outline: none;
-        min-height: 24px;
-        max-height: 160px;
-        line-height: 1.5;
-        padding: 6px 4px;
-      }
-
-      .composer-input::placeholder { color: var(--text-muted); }
-
-      .composer-send {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        border: none;
-        background: #424242;
-        color: #8e8e8e;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        flex-shrink: 0;
-      }
-
-      .composer-send.active { background: #fff; color: #000; }
-      .composer-send:disabled { opacity: 0.35; cursor: not-allowed; }
-
-      #fileInput { display: none; }
-
-      @media (max-width: 768px) {
-        .app { grid-template-columns: 1fr; }
-        .sidebar { display: none; }
-      }
+      .widget-card input[type="range"] { width: 100%; accent-color: var(--iwoca-red); }
+      .fields { display: grid; gap: 10px; margin-bottom: 10px; }
+      .btn { display: block; width: 100%; padding: 11px; border-radius: 9px; border: 1px solid var(--iwoca-red); background: var(--iwoca-red); color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; text-align: center; text-decoration: none; }
+      .row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+      .val { color: var(--iwoca-red); font-weight: 800; font-size: 13px; }
+      .scale { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); }
+      .terms { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      .term-btn, .tgl { padding: 8px 0; border: 1px solid var(--card-border); background: #fff; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; text-align: center; color: var(--fg); }
+      .tgl { flex: 1; }
+      .early-row { display: flex; gap: 8px; margin-top: 8px; }
+      .early-row input { flex: 1; min-width: 0; padding: 12px; font-size: 16px; }
+      .early-row select { flex: 0 0 44%; padding: 12px 10px; font-size: 15px; font-weight: 700; }
+      .term-btn[aria-pressed="true"], .tgl[aria-pressed="true"] { background: var(--iwoca-red); color: #fff; border-color: var(--iwoca-red); }
+      .res { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+      .res .k { color: var(--muted); }
+      .res .v { font-weight: 700; }
+      .res.big .v { color: var(--iwoca-red); font-size: 16px; font-weight: 800; }
+      .subcard { background: #fff; border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+      .hint { font-size: 11px; color: var(--muted); margin: 5px 0 0; }
+      .hidden { display: none; }
+
+      .score-row { display: flex; align-items: center; gap: 12px; }
+      .score { font-size: 32px; font-weight: 800; line-height: 1; min-width: 74px; text-align: center; color: var(--iwoca-red); }
+      .score small { display: block; font-size: 10.5px; color: var(--muted); font-weight: 500; }
+      .band { display: inline-block; padding: 2px 9px; border-radius: 999px; background: #fff; border: 1px solid var(--card-border); font-size: 11.5px; font-weight: 700; color: var(--iwoca-red); }
+      .bar { height: 7px; background: #fff; border-radius: 999px; overflow: hidden; flex: 1; border: 1px solid var(--card-border); }
+      .bar > span { display: block; height: 100%; background: var(--iwoca-red); }
+      .factor { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--card-border); border-radius: 9px; padding: 6px 9px; margin-top: 6px; font-size: 12px; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+      .dot.strong { background: var(--strong); } .dot.steady { background: var(--steady); } .dot.watch { background: var(--watch); }
+      .factor .sig { margin-left: auto; font-size: 11px; text-transform: capitalize; color: var(--iwoca-red); font-weight: 700; }
+      .rate-big { font-size: 24px; font-weight: 800; color: var(--iwoca-red); text-align: center; }
+
+      #chips { display: flex; gap: 8px; overflow-x: auto; padding: 8px 16px; max-width: 672px; margin: 0 auto; width: 100%; }
+      .chip { flex: none; background: #fff; border: 1px solid var(--card-border); border-radius: 999px; padding: 7px 13px; font-size: 12.5px; font-weight: 600; color: var(--fg); cursor: pointer; }
+      .chip:hover { border-color: var(--iwoca-red); color: var(--iwoca-red); }
+
+      #composer { background: #fff; border-top: 1px solid var(--card-border); padding: 10px 16px 14px; }
+      .composer-inner { max-width: 640px; margin: 0 auto; display: flex; gap: 8px; }
+      #input { flex: 1; padding: 12px 14px; border: 1px solid var(--card-border); border-radius: 12px; font-size: 14px; color: var(--fg); background: var(--bg); }
+      #input:focus { outline: 2px solid var(--iwoca-red-soft); border-color: var(--iwoca-red); }
+      #send { padding: 0 18px; border-radius: 12px; border: none; background: var(--iwoca-red); color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; }
+      .foot { max-width: 640px; margin: 8px auto 0; font-size: 10.5px; color: var(--muted); text-align: center; line-height: 1.5; }
     </style>
   </head>
   <body>
-    <input type="file" id="fileInput" multiple accept=".pdf,.png,.jpg,.jpeg,.csv,.xlsx,.xls,.doc,.docx" />
+    <header>
+      <span class="logo">iwoca</span>
+      <span class="tag">Business finance assistant</span>
+      <span class="demo-pill">DEMO — scripted, fake data</span>
+    </header>
 
-    <div class="app">
-      <aside class="sidebar">
-        <div class="sidebar-top">
-          <div class="sidebar-logo">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.055 6.055 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023-.141-.085-4.774-2.755a.775.775 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135-2.02-1.168a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08-4.778 2.758a.795.795 0 0 0-.393.681zm1.097-2.365 2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/>
-            </svg>
-            ChatGPT
-          </div>
-          <button class="new-chat" id="newChatBtn" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-            New chat
-          </button>
-        </div>
-        <div class="chat-history">
-          <div class="history-item active" id="chatTitle">New chat</div>
-          <div class="history-item">Cash flow for Q2</div>
-        </div>
-        <div class="sidebar-footer">Interactive iwoca demo</div>
-      </aside>
+    <div id="chat"><div class="inner" id="thread"></div></div>
 
-      <div class="main">
-        <header class="topbar">
-          <div class="model-picker">
-            ChatGPT 4o
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
-          <div class="topbar-actions">
-            <span class="connector-badge hidden" id="connectorBadge">
-              <span class="connector-dot"></span>
-              iwoca
-            </span>
-            <button class="demo-btn" id="resetBtn" type="button">Reset</button>
-          </div>
-        </header>
+    <div id="chips"></div>
 
-        <div class="chat-area" id="chatArea">
-          <div id="messages"></div>
-        </div>
-
-        <div class="composer-wrap">
-          <div class="composer-inner">
-            <button class="composer-attach" id="attachBtn" type="button" aria-label="Attach files">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-            </button>
-            <textarea class="composer-input" id="composerInput" rows="1" placeholder="Ask anything"></textarea>
-            <button class="composer-send" id="sendBtn" type="button" aria-label="Send" disabled>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-            </button>
-          </div>
-        </div>
+    <div id="composer">
+      <div class="composer-inner">
+        <input id="input" type="text" placeholder="Ask about iwoca — how it works, rates, use cases…" autocomplete="off" />
+        <button id="send" type="button">Send</button>
       </div>
+      <p class="foot">
+        Scripted local demo — in the ChatGPT app a real model handles this conversation and surfaces the same widgets via MCP.
+        All estimates are illustrative fake data, not a quote or offer. iwoca's representative rate is 3.3%/month; actual rates
+        are confirmed after applying. Lending is subject to status and iwoca's assessment.
+      </p>
     </div>
 
     <script>
-      const messagesEl = document.getElementById("messages");
-      const chatArea = document.getElementById("chatArea");
-      const composerInput = document.getElementById("composerInput");
-      const sendBtn = document.getElementById("sendBtn");
-      const attachBtn = document.getElementById("attachBtn");
-      const fileInput = document.getElementById("fileInput");
-      const resetBtn = document.getElementById("resetBtn");
-      const newChatBtn = document.getElementById("newChatBtn");
-      const chatTitle = document.getElementById("chatTitle");
-      const connectorBadge = document.getElementById("connectorBadge");
+      /* ================= shared finance maths (mirror of src/finance.ts) ================= */
+      var DAYS_PER_MONTH = 30, RATE_MIN = 1.5, RATE_MAX = 5.7, SCORE_MIN = 35, SCORE_MAX = 90;
+      var APPLY_URL = "https://www.iwoca.co.uk/apply/new";
+      var RATE_ANCHORS = [[SCORE_MIN, RATE_MAX], [62, 3.9], [SCORE_MAX, 2.0]];
 
-      const OPENAI_LOGO = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.055 6.055 0 0 0-.747-7.073z"/></svg>`;
+      function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+      function r2(n) { return Math.round(n * 100) / 100; }
+      function gbp(n) { return "£" + r2(n).toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+      function gbp0(n) { return "£" + Math.round(n).toLocaleString("en-GB"); }
 
-      let busy = false;
-      let userInitials = "You";
-      let uploadTarget = "composer";
+      function bandFor(s) { return s >= 80 ? "Strong" : s >= 65 ? "Good" : s >= 50 ? "Fair" : "Developing"; }
+      function compass(years, revenue) {
+        var score = 62;
+        var tSig = years === undefined ? "steady" : years >= 3 ? "strong" : years >= 1 ? "steady" : "watch";
+        if (years !== undefined) score += years >= 3 ? 12 : years >= 1 ? 4 : -8;
+        var cSig = revenue === undefined ? "steady" : revenue >= 25000 ? "strong" : revenue >= 5000 ? "steady" : "watch";
+        if (revenue !== undefined) score += revenue >= 25000 ? 10 : revenue >= 5000 ? 3 : -6;
+        score = clamp(Math.round(score), SCORE_MIN, SCORE_MAX);
+        return {
+          score: score, band: bandFor(score),
+          factors: [
+            { name: "Trading history", sig: tSig, note: years === undefined ? "No trading history provided." : years + " year(s) trading (illustrative)." },
+            { name: "Cash flow", sig: cSig, note: revenue === undefined ? "No revenue provided." : "~" + gbp0(revenue) + "/month revenue (illustrative)." },
+            { name: "Affordability headroom", sig: "steady", note: "Illustrative indicator (demo)." },
+          ],
+        };
+      }
+      function indicativeRate(score) {
+        var s = clamp(score, SCORE_MIN, SCORE_MAX), mid = RATE_ANCHORS[RATE_ANCHORS.length - 1][1];
+        for (var k = 0; k < RATE_ANCHORS.length - 1; k++) {
+          var a = RATE_ANCHORS[k], b = RATE_ANCHORS[k + 1];
+          if (s <= b[0]) { mid = a[1] + ((s - a[0]) / (b[0] - a[0])) * (b[1] - a[1]); break; }
+        }
+        return { low: r2(clamp(mid - 0.4, RATE_MIN, RATE_MAX)), mid: r2(mid), high: r2(clamp(mid + 0.4, RATE_MIN, RATE_MAX)) };
+      }
+      function feePct(term) { return term <= 12 ? 0 : term <= 24 ? 5 : 6; }
+      function monthlyPayment(P, i, n) { return i === 0 ? P / n : (P * i) / (1 - Math.pow(1 + i, -n)); }
+      function earlySettle(P, i, pay, days) {
+        var dr = i / DAYS_PER_MONTH, fm = Math.floor(days / DAYS_PER_MONTH), rem = days - fm * DAYS_PER_MONTH, bal = P, paid = 0;
+        for (var m = 0; m < fm && bal > 0; m++) { bal = bal + bal * i - pay; if (bal < 0) bal = 0; paid += pay; }
+        var tot = paid + bal + bal * dr * rem;
+        return { total: tot, interest: Math.max(0, tot - P) };
+      }
 
-      const app = {
-        phase: "discover",
-        iwocaConnected: false,
-        fields: {
-          firstName: null, lastName: null, companyName: null,
-          companiesHouseNumber: null,
-          amountRequested: null, annualTurnover: null, useOfFunds: null,
-          fundsDuration: null, email: null, phone: null,
-        },
-        companiesHouseConfirmed: false,
-        reference: null,
-        statusLevel: 0,
-        pendingField: null,
-        uploadedFiles: [],
-        accountManager: null,
-        emailSent: false,
+      /* ================= knowledge (mirror of data/knowledge.json; sources recorded there) ================= */
+      var K = {
+        how:
+          "Here's how iwoca works:\n" +
+          "• Apply online in about <b>5 minutes</b> — a few basic questions about your business.\n" +
+          "• Link business accounts or upload bank statements / VAT returns; iwoca assesses your business performance.\n" +
+          "• In almost all cases you get a <b>decision within 24 hours</b> — often within hours.\n" +
+          "• Draw down what you need; funds typically arrive in hours.\n" +
+          "• You're only charged interest on what you draw, <b>for the days you use it</b>, and repaying early is free.\n" +
+          "• Borrowing over 12 months may add a fee (typically 5% for 13–24 months, 6% for longer).",
+        uses:
+          "Businesses use iwoca for things like:\n" +
+          "• Working capital and smoothing cash flow\n• Buying stock ahead of busy periods\n" +
+          "• Equipment, vehicles and tools\n• Expansion and growth projects\n• Hiring\n• Covering a VAT or tax bill\n\n" +
+          "What would you be using funding for? I can run a quick <b>estimate</b> if you'd like.",
+        compare:
+          "Compared with a traditional bank process (based on iwoca's published positioning):\n" +
+          "• <b>Speed</b> — minutes to apply, decisions usually within 24 hours, vs weeks at a bank.\n" +
+          "• <b>Flexibility</b> — a Flexi-Loan works like a credit facility: draw down, repay, top up within your limit.\n" +
+          "• <b>Pay for what you use</b> — daily interest on drawn funds only, and no early-repayment fees.\n" +
+          "• <b>Unsecured</b> — no asset requirements (a director's personal guarantee for limited companies).\n" +
+          "Named lender-by-lender comparisons should be checked against current terms.",
+        reviews:
+          "iwoca is rated <b>4.8 / 5 on Trustpilot</b> from over 12,700 reviews (checked Aug 2026). Common themes:\n" +
+          "• Applications taking minutes rather than weeks\n• Clear terms, no hidden charges, no early-repayment penalties\n" +
+          "• A dedicated account manager for every customer; most calls answered within 60 seconds\n" +
+          "• Repeat borrowing to support growth\n" +
+          "For balance: a few reviewers wanted clearer early-repayment answers, and some felt rates were high.",
+        rates:
+          "iwoca's <b>representative rate is 3.3% per month</b> (interest is quoted per 30 days and charged daily on your outstanding balance — so each repayment's interest portion shrinks as the balance falls).\n" +
+          "Your actual rate depends on your business and is only confirmed after applying. There are <b>no early-repayment fees</b>; borrowing over 12 months may add a fee (typically 5% for 13–24 months, 6% for longer).\n\n" +
+          "Want a rough idea for your business? I can run the <b>Credit Compass</b>, or open the <b>calculator</b>.",
+        products:
+          "iwoca has two main products:\n" +
+          "• <b>Flexi-Loan</b> — borrow £1,000 to £1,000,000, draw down and repay flexibly, interest only on what you use, no early-repayment fees.\n" +
+          "• <b>iwocaPay</b> — B2B \"pay later\": your trade customers spread up to £30,000 over 1, 3 or 12 months while you're paid up front.\n" +
+          "Ask me about eligibility, rates, or run an estimate.",
+        eligibility:
+          "Who can apply:\n• UK-based business\n• Limited company or LLP / partnership (iwoca no longer lends to sole traders)\n" +
+          "• Applicant 18+\n• No minimum turnover or trading history stated (startups capped around £10,000)\n" +
+          "• Borrow £1,000–£1,000,000; limits are typically up to around two months' turnover.",
+        apply:
+          "For an <b>exact amount and rate</b>, apply to iwoca — it takes a few minutes and there's no obligation:\n" +
+          APPLY_URL + "\n\niwoca confirms your actual amount, rate and terms after assessing your application.",
+        welcome:
+          "Hi! I'm the <b>iwoca</b> assistant (demo). I can explain how iwoca works, what businesses use funding for, how we compare to banks, what customers say — and when you're ready I can estimate how your business might look and what a loan could cost.\n\nWhat would you like to know?",
+        fallback:
+          "I can help with:\n• <b>How iwoca works</b>\n• <b>What you can use funding for</b>\n• <b>How iwoca compares</b> to banks\n• <b>Customer reviews</b>\n• <b>Rates & fees</b>\n• A rough <b>estimate for your business</b> (Credit Compass)\n• The <b>loan cost calculator</b>\n• <b>Applying</b> for an exact rate\n\nTry one of the chips below, or just ask.",
       };
 
-      const FIELD_PROMPTS = {
-        firstName: "your first name", lastName: "your last name",
-        companyName: "your company's registered name, as it appears on Companies House",
-        amountRequested: "how much funding you need (in GBP)",
-        annualTurnover: "your annual turnover (in GBP)",
-        useOfFunds: "what you'll use the funds for",
-        fundsDuration: "how long you need the funds (e.g. 6 months, 2 years)",
-        email: "your email address", phone: "your phone number",
-      };
+      /* ================= chat plumbing ================= */
+      var thread = document.getElementById("thread");
+      var chat = document.getElementById("chat");
 
-      const FIELD_ORDER = [
-        "firstName", "lastName", "companyName", "amountRequested",
-        "annualTurnover", "useOfFunds", "fundsDuration", "email", "phone",
-      ];
+      function scrollDown() { chat.scrollTop = chat.scrollHeight; }
 
-      function escapeHtml(text) {
-        return String(text)
-          .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      function userMsg(text) {
+        var el = document.createElement("div");
+        el.className = "msg user";
+        el.textContent = text;
+        thread.appendChild(el); scrollDown();
+      }
+      function botMsg(html, delay) {
+        setTimeout(function () {
+          var el = document.createElement("div");
+          el.className = "msg bot";
+          el.innerHTML = html; // static trusted strings only — user text never passes through here
+          thread.appendChild(el); scrollDown();
+        }, delay || 350);
       }
 
-      function formatGbp(amount) {
-        return `£${Number(amount).toLocaleString("en-GB")}`;
+      /* ================= inline widget cards ================= */
+      var lastRate = null; // carries the compass rate into the calculator
+
+      function compassCard() {
+        var card = document.createElement("div");
+        card.className = "widget-card";
+        card.innerHTML =
+          '<h3>iwoca <span class="kw">Credit Compass</span></h3>' +
+          '<p class="wc-sub">A rough, illustrative estimate — tell me a little about the business.</p>' +
+          '<div class="banner">DEMO — FAKE DATA · NOT A CREDIT DECISION</div>' +
+          '<div class="fields">' +
+          '<div><label>Limited company name</label><input type="text" class="cc-name" placeholder="e.g. Acme Trading Ltd" /></div>' +
+          '<div><label>Years trading</label><input type="number" class="cc-years" min="0" max="100" step="1" placeholder="e.g. 4" /></div>' +
+          '<div><label>Approx. monthly revenue (£)</label><input type="number" class="cc-rev" min="0" step="500" placeholder="e.g. 20000" /></div>' +
+          "</div>" +
+          '<button class="btn cc-go" type="button">Get my estimate</button>' +
+          '<div class="cc-out hidden" style="margin-top:12px"></div>';
+        thread.appendChild(card);
+
+        card.querySelector(".cc-go").addEventListener("click", function () {
+          var name = card.querySelector(".cc-name").value.trim();
+          var yearsRaw = card.querySelector(".cc-years").value;
+          var revRaw = card.querySelector(".cc-rev").value;
+          var years = yearsRaw === "" ? undefined : Number(yearsRaw);
+          var rev = revRaw === "" ? undefined : Number(revRaw);
+          var est = compass(years, rev);
+          var rate = indicativeRate(est.score);
+          lastRate = rate;
+
+          var out = card.querySelector(".cc-out");
+          out.className = "cc-out";
+          out.innerHTML =
+            '<div class="subcard"><div class="score-row">' +
+            '<div class="score">' + est.score + "<small>/ 100</small></div>" +
+            '<div style="flex:1"><div style="margin-bottom:6px"><span class="band">' + est.band + "</span></div>" +
+            '<div class="bar"><span style="width:' + est.score + '%"></span></div></div></div>' +
+            est.factors.map(function (f) {
+              return '<div class="factor"><span class="dot ' + f.sig + '"></span><span><b>' + f.name + "</b><br><span style=\"color:var(--muted);font-size:11px\">" + f.note + '</span></span><span class="sig">' + f.sig + "</span></div>";
+            }).join("") +
+            "</div>" +
+            '<div class="subcard" style="text-align:center"><label style="margin-bottom:2px">Rough indicative rate</label>' +
+            '<div class="rate-big">~' + rate.mid + '% <span style="font-size:13px">/ month</span></div>' +
+            '<p class="hint">Roughly ' + rate.low + "%–" + rate.high + "%/month for a business like this. <b>Not a guarantee</b> — iwoca's representative rate is 3.3%/month; your actual rate is confirmed after applying.</p></div>" +
+            '<button class="btn cc-cost" type="button">See what this could cost →</button>';
+          scrollDown();
+
+          out.querySelector(".cc-cost").addEventListener("click", function () {
+            botMsg("Here's the calculator, prefilled with your rough rate of <b>~" + rate.mid + "%/month</b>. Remember it's an estimate, not a guarantee — drag the slider to explore.", 100);
+            setTimeout(function () { calculatorCard(rate.mid); }, 500);
+          });
+
+          var safeName = name.replace(/[&<>"']/g, "");
+          botMsg(
+            (safeName ? "<b>" + safeName + "</b>: an" : "An") +
+              " illustrative score of <b>" + est.score + "/100 (" + est.band + ")</b> and a rough rate around <b>~" + rate.mid + "%/month</b> — an estimate, not iwoca's real pricing. Want to see what that means in monthly costs?",
+            600,
+          );
+        });
+        scrollDown();
       }
 
-      function formatFileSize(bytes) {
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-      }
+      function calculatorCard(ratePct) {
+        var s = { amount: 50000, rate: clamp(ratePct || 3.3, RATE_MIN, RATE_MAX), term: 24, early: false, earlyN: 3, earlyUnit: 7 };
+        var card = document.createElement("div");
+        card.className = "widget-card";
+        card.innerHTML =
+          '<h3>What could a loan <span class="kw">cost</span>?</h3>' +
+          '<p class="wc-sub">Interest is calculated daily on your outstanding balance. Rates are rough estimates, not a guarantee.</p>' +
+          '<div class="fields">' +
+          '<div><label>Amount (£)</label><input type="number" class="lc-amount" min="1000" max="1000000" step="500" value="50000" /></div>' +
+          '<div><div class="row"><label>Monthly interest rate</label><span class="val"><span class="lc-rateval">' + s.rate + "</span>% / month</span></div>" +
+          '<input type="range" class="lc-rate" min="1.5" max="5.7" step="0.1" value="' + s.rate + '" />' +
+          '<div class="scale"><span>1.5%</span><span>5.7%</span></div>' +
+          '<p class="hint">iwoca\'s representative rate is 3.3%/month; your actual rate is confirmed after applying.</p></div>' +
+          '<div><label>Term</label><div class="terms">' +
+          [12, 24, 48, 60].map(function (t) { return '<button class="term-btn" data-term="' + t + '" type="button" aria-pressed="' + (t === 24) + '">' + t + " mo</button>"; }).join("") +
+          "</div></div></div>" +
+          '<div class="subcard lc-results"></div>' +
+          '<div style="margin-bottom:10px"><label>Repay early? <span style="font-weight:600;color:var(--muted)">(No fees.)</span></label>' +
+          '<div style="display:flex;gap:6px"><button class="tgl lc-early-no" aria-pressed="true" type="button">No</button><button class="tgl lc-early-yes" aria-pressed="false" type="button">Yes</button></div>' +
+          '<div class="lc-early hidden" style="margin-top:8px"><label style="margin-top:4px">Repay after</label><div class="early-row">' +
+          '<input type="number" class="lc-earlyn" min="1" step="1" value="3" />' +
+          '<select class="lc-earlyu"><option value="1">days</option><option value="7" selected>weeks</option><option value="30">months</option></select>' +
+          '</div><div class="subcard lc-earlyres" style="margin-top:8px;margin-bottom:0"></div></div></div>' +
+          '<a class="btn" href="' + APPLY_URL + '" target="_blank" rel="noopener">Get an exact rate — apply with iwoca</a>' +
+          '<p class="hint" style="text-align:center">A few minutes, no obligation. iwoca confirms your actual amount, rate and terms.</p>';
+        thread.appendChild(card);
 
-      function parseMoney(text) {
-        const match = text.match(/£?\s*([\d,]+(?:\.\d+)?)\s*(k|K|m|M|million)?/);
-        if (!match) return null;
-        let value = parseFloat(match[1].replace(/,/g, ""));
-        const suffix = match[2]?.toLowerCase();
-        if (suffix === "k") value *= 1000;
-        if (suffix === "m" || suffix === "million") value *= 1_000_000;
-        return Number.isFinite(value) ? value : null;
-      }
-
-      function assignFieldValue(fieldKey, text) {
-        const value = text
-          .replace(/^(it'?s|that'?s|about|around|my company is|company is|registered name is|the registered name is|company:?)\s+/i, "")
-          .trim().replace(/\.$/, "");
-        if (!value || value.length >= 120) return false;
-
-        if (fieldKey === "amountRequested" || fieldKey === "annualTurnover") {
-          const money = parseMoney(value);
-          if (!money) return false;
-          app.fields[fieldKey] = money;
-          return true;
-        }
-        if (fieldKey === "firstName" || fieldKey === "lastName") {
-          const parts = value.split(/\s+/).filter(Boolean);
-          if (!parts.length) return false;
-          if (fieldKey === "firstName") app.fields.firstName = parts[0];
-          if (fieldKey === "lastName") app.fields.lastName = parts[parts.length - 1];
-          return true;
-        }
-        if (fieldKey === "email") {
-          const email = value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-          app.fields.email = email ? email[0] : value;
-          return true;
-        }
-        if (fieldKey === "phone") {
-          const phone = value.match(/(?:\+?\d[\d ()\-]{6,}\d)/);
-          app.fields.phone = phone ? phone[0].trim() : value;
-          return true;
-        }
-        if (fieldKey === "companyName") {
-          app.companiesHouseConfirmed = false;
-          app.fields.companiesHouseNumber = null;
-        }
-        app.fields[fieldKey] = value;
-        return true;
-      }
-
-      function extractFields(text) {
-        const emailMatch = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-        if (emailMatch) app.fields.email = emailMatch[0];
-
-        const phoneMatch = text.match(/(?:\+?\d[\d ()\-]{6,}\d)/);
-        if (phoneMatch) app.fields.phone = phoneMatch[0].trim();
-
-        const amounts = [];
-        const amountRegex = /£?\s*[\d,]+(?:\.\d+)?\s*(?:k|K|m|M|million)?/g;
-        let m;
-        while ((m = amountRegex.exec(text)) !== null) {
-          const parsed = parseMoney(m[0]);
-          if (parsed) amounts.push(parsed);
-        }
-
-        if (amounts.length >= 1 && !app.fields.amountRequested) app.fields.amountRequested = amounts[0];
-        if (amounts.length >= 2 && !app.fields.annualTurnover) app.fields.annualTurnover = amounts[1];
-        else if (/turnover|revenue/i.test(text) && amounts.length && !app.fields.annualTurnover)
-          app.fields.annualTurnover = amounts[amounts.length - 1];
-
-        const durationMatch = text.match(/(\d+\s*(?:months?|years?|weeks?)|(?:six|twelve|two|three|four|five)\s+(?:months?|years?))/i);
-        if (durationMatch && !app.fields.fundsDuration) app.fields.fundsDuration = durationMatch[0];
-
-        const companyMatch = text.match(/(?:company(?:\s+is)?|business(?:\s+is)?|called)\s+(.+?)(?:\.|,|$)/i);
-        if (companyMatch && !app.fields.companyName) app.fields.companyName = companyMatch[1].trim();
-        else if (/(Ltd|Limited|LLP|PLC)/i.test(text) && !app.fields.companyName) {
-          const ltdMatch = text.match(/(.+?(?:Ltd|Limited|LLP|PLC)\.?)/i);
-          if (ltdMatch) app.fields.companyName = ltdMatch[1].trim();
-        }
-
-        if (/use|for|towards|buy|purchase|fund/i.test(text) && !app.fields.useOfFunds) {
-          const useMatch = text.match(/(?:use(?:\s+it)?\s+for|for|towards|buy|purchase)\s+(.+?)(?:\.|,|over|email|phone|$)/i);
-          if (useMatch) app.fields.useOfFunds = useMatch[1].trim().replace(/\.$/, "");
-          else if (/oven|equipment|stock|cash flow|expansion|hiring/i.test(text))
-            app.fields.useOfFunds = text.match(/(?:oven|equipment|stock|cash flow|expansion|hiring)[^.]*/i)?.[0]?.trim();
-        }
-
-        const nameMatch = text.match(/(?:i'm|i am|my name is|this is)\s+([A-Z][a-z]+)(?:\s+([A-Z][a-z]+))?/i);
-        if (nameMatch) {
-          if (!app.fields.firstName) app.fields.firstName = nameMatch[1];
-          if (nameMatch[2] && !app.fields.lastName) app.fields.lastName = nameMatch[2];
-        }
-      }
-
-      function missingFields() {
-        return FIELD_ORDER.filter((key) => !app.fields[key]);
-      }
-
-      function fullName() {
-        return [app.fields.firstName, app.fields.lastName].filter(Boolean).join(" ");
-      }
-
-      function updateUserInitials() {
-        if (app.fields.firstName) {
-          userInitials = ((app.fields.firstName[0] || "") + (app.fields.lastName?.[0] || "")).toUpperCase() || "You";
-        }
-      }
-
-      function isFundingIntent(text) {
-        return /fund|loan|finance|borrow|lending|iwoca|£|money|credit|cash/i.test(text);
-      }
-
-      function isConfirmIntent(text) {
-        return /^(yes|yeah|yep|submit|confirm|looks good|go ahead|please submit|that's right|correct)\b/i.test(text.trim());
-      }
-
-      function isStatusIntent(text) {
-        return /status|progress|update|where.*application|how.*going/i.test(text);
-      }
-
-      function isEditIntent(text) {
-        return /edit|change|update details|wrong|fix/i.test(text);
-      }
-
-      function isIwocaChoice(text) {
-        return /iwoca|apply (?:here|in chat|from here|directly)|the (?:chat|in-chat) (?:one|option)|start (?:an )?application/i.test(text);
-      }
-
-      function fileListHtml() {
-        if (!app.uploadedFiles.length) return "";
-        return `<div class="file-list">${app.uploadedFiles.map((f) => `
-          <div class="file-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
-            <span class="file-name">${escapeHtml(f.name)}</span>
-            <span class="file-size">${formatFileSize(f.size)}</span>
-          </div>`).join("")}</div>`;
-      }
-
-      function uploadZoneHtml() {
-        if (app.uploadedFiles.length) {
-          return `${fileListHtml()}
-            <button type="button" class="upload-zone" data-action="upload" style="margin-top:10px;padding:14px">
-              Add more documents
-            </button>`;
-        }
-        return `<div class="upload-zone" data-action="upload">
-          <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-          </svg>
-          Drop files here or click to upload<br>
-          <span style="font-size:12px;margin-top:4px;display:inline-block">PDF, images, CSV, Excel</span>
-        </div>`;
-      }
-
-      function suggestionsWidget() {
-        return `<div class="widget" data-widget="suggestions">
-          <div class="widget-header"><span class="widget-title">Business finance options</span></div>
-          <div class="widget-body"><div class="suggestion-list">
-            <button class="suggestion-item" data-action="suggestion-bank" type="button">
-              <div class="suggestion-name">High street bank loan</div>
-              <div class="suggestion-desc">Traditional term loans from your business bank. Usually requires a branch visit or online application.</div>
-            </button>
-            <button class="suggestion-item" data-action="suggestion-startup" type="button">
-              <div class="suggestion-name">Start Up Loans</div>
-              <div class="suggestion-desc">Government-backed scheme offering up to £25,000 for newer businesses, with mentoring included. Apply via the Start Up Loans website.</div>
-            </button>
-            <button class="suggestion-item" data-action="suggestion-iwoca" type="button">
-              <div class="suggestion-name">iwoca</div>
-              <div class="suggestion-desc">Flexible business finance for UK SMEs, from working capital to growth funding. Apply online or from this chat.</div>
-            </button>
-            <button class="suggestion-item" data-action="suggestion-compare" type="button">
-              <div class="suggestion-name">Funding comparison sites</div>
-              <div class="suggestion-desc">Compare multiple lenders side by side before applying on each lender's site.</div>
-            </button>
-          </div></div></div>`;
-      }
-
-      function openingAssistantResponse() {
-        return {
-          text: "There are several routes worth considering for UK business finance. Here are some of the most common options — let me know if you'd like more detail on any of them.",
-          widget: "suggestions",
-        };
-      }
-
-      function isRejectIntent(text) {
-        return /^(no|nope|nah|not right|incorrect|wrong|that's wrong|that is wrong|not mine|not my company|different company)\b/i.test(text.trim());
-      }
-
-      function mockCompaniesHouseLookup(registeredName) {
-        const hash = [...registeredName.toLowerCase()].reduce((a, c) => a + c.charCodeAt(0), 0);
-        return String(10000000 + (hash % 89999999));
-      }
-
-      function mockCompanyNameFromNumber(number) {
-        const hash = parseInt(number.replace(/\D/g, ""), 10) || 0;
-        const bases = [
-          "Harbour Lane Bakery",
-          "Greenfield Logistics",
-          "Atlas Digital Services",
-          "Summit Properties",
-          "Chen's Artisan Bakery",
-        ];
-        const suffixes = ["Ltd", "Limited", "LLP"];
-        return `${bases[hash % bases.length]} ${suffixes[hash % suffixes.length]}`;
-      }
-
-      function parseCompaniesHouseNumber(text) {
-        const match = text.match(/\b([0-9]{6,8})\b/);
-        if (!match) return null;
-        return match[1].padStart(8, "0").slice(-8);
-      }
-
-      function askForCompaniesHouseNumber() {
-        app.fields.companiesHouseNumber = null;
-        app.companiesHouseConfirmed = false;
-        app.phase = "enterCompaniesHouseNumber";
-        return {
-          text: "What's your Companies House number? It's the 8-digit number on your certificate of incorporation, or you can find it at find-and-update.company-information.service.gov.uk.",
-        };
-      }
-
-      function companiesHouseWidget() {
-        return `<div class="widget" data-widget="companiesHouse">
-          <div class="widget-header"><span class="widget-title">Companies House</span><span class="widget-brand">iwoca</span></div>
-          <div class="widget-body"><div class="field-grid">
-            <div class="field"><span class="field-label">Registered name</span><span class="field-value">${escapeHtml(app.fields.companyName)}</span></div>
-            <div class="field"><span class="field-label">Company number</span><span class="field-value">${escapeHtml(app.fields.companiesHouseNumber)}</span></div>
-          </div></div>
-          <div class="widget-actions">
-            <button class="widget-btn" data-action="reject-ch" type="button">Not my company</button>
-            <button class="widget-btn primary" data-action="confirm-ch" type="button">Yes, that's correct</button>
-          </div></div>`;
-      }
-
-      function startCompaniesHouseConfirm(useExistingNumber = false) {
-        if (!useExistingNumber) {
-          app.fields.companiesHouseNumber = mockCompaniesHouseLookup(app.fields.companyName);
-        }
-        app.companiesHouseConfirmed = false;
-        app.phase = "confirmCompaniesHouse";
-        return {
-          tool: "apply_for_business_finance",
-          text: "I've looked that up on Companies House. Please confirm this is your business before we continue.",
-          widget: "companiesHouse",
-        };
-      }
-
-      function connectIwoca() {
-        app.iwocaConnected = true;
-        app.phase = "collecting";
-        connectorBadge.classList.remove("hidden");
-      }
-
-      function summaryWidget() {
-        const f = app.fields;
-        return `<div class="widget" data-widget="summary">
-          <div class="widget-header"><span class="widget-title">Application summary</span><span class="widget-brand">iwoca</span></div>
-          <div class="widget-body"><div class="field-grid">
-            <div class="field"><span class="field-label">Applicant</span><span class="field-value">${escapeHtml(fullName())}</span></div>
-            <div class="field"><span class="field-label">Registered name</span><span class="field-value">${escapeHtml(f.companyName)}</span></div>
-            <div class="field"><span class="field-label">Companies House no.</span><span class="field-value">${escapeHtml(f.companiesHouseNumber)}</span></div>
-            <div class="field"><span class="field-label">Amount requested</span><span class="field-value amount">${formatGbp(f.amountRequested)}</span></div>
-            <div class="field"><span class="field-label">Annual turnover</span><span class="field-value">${formatGbp(f.annualTurnover)}</span></div>
-            <div class="field"><span class="field-label">Use of funds</span><span class="field-value">${escapeHtml(f.useOfFunds)}</span></div>
-            <div class="field"><span class="field-label">Funding duration</span><span class="field-value">${escapeHtml(f.fundsDuration)}</span></div>
-            <div class="field"><span class="field-label">Contact</span><span class="field-value">${escapeHtml(f.email)} · ${escapeHtml(f.phone)}</span></div>
-          </div></div>
-          <div class="widget-actions">
-            <button class="widget-btn" data-action="edit" type="button">Edit details</button>
-            <button class="widget-btn primary" data-action="submit" type="button">Submit application</button>
-          </div></div>`;
-      }
-
-      function statusStepsHtml() {
-        const s = app.statusLevel;
-        const complete = app.emailSent;
-        return `<div class="status-tracker">
-          <div class="status-step done"><div class="status-dot"></div><span class="status-label">Submitted</span></div>
-          <div class="status-step ${complete || s >= 2 ? "done" : s >= 1 ? "active" : ""}"><div class="status-dot"></div><span class="status-label">Under review</span></div>
-          <div class="status-step ${complete ? "done" : s >= 2 ? "active" : ""}"><div class="status-dot"></div><span class="status-label">Documents</span></div>
-        </div>`;
-      }
-
-      function assignAccountManager() {
-        if (app.accountManager) return;
-        const managers = [
-          { name: "Sarah Mitchell", email: "sarah.mitchell@iwoca.co.uk", phone: "+44 20 7123 4567" },
-          { name: "James Okonkwo", email: "james.okonkwo@iwoca.co.uk", phone: "+44 20 7456 8901" },
-          { name: "Emma Richardson", email: "emma.richardson@iwoca.co.uk", phone: "+44 161 496 0234" },
-        ];
-        const idx = parseInt(app.reference?.replace(/\D/g, "") || "0", 10) % managers.length;
-        app.accountManager = managers[idx];
-      }
-
-      function emailWidget() {
-        const f = app.fields;
-        const mgr = app.accountManager;
-        const body = `Hi ${f.firstName},
-
-Thank you for applying for business finance with iwoca. We've received your application and supporting documents.
-
-Application reference: ${app.reference}
-Company: ${f.companyName}
-Companies House no.: ${f.companiesHouseNumber}
-Amount requested: ${formatGbp(f.amountRequested)}
-
-Your dedicated account manager:
-${mgr.name}
-${mgr.email}
-${mgr.phone}
-
-They'll be in touch within one working day to discuss next steps and answer any questions.
-
-Kind regards,
-The iwoca team`;
-
-        return `<div class="widget email-widget" data-widget="email">
-          <div class="widget-header"><span class="widget-title">Confirmation email</span><span class="widget-brand">iwoca</span></div>
-          <div class="widget-body">
-            <div class="email-meta">
-              <div class="email-meta-row"><span class="email-meta-label">To</span><span class="email-meta-value">${escapeHtml(f.email)}</span></div>
-              <div class="email-meta-row"><span class="email-meta-label">From</span><span class="email-meta-value">iwoca Applications &lt;applications@iwoca.co.uk&gt;</span></div>
-            </div>
-            <div class="email-subject">Your iwoca application is confirmed — ${app.reference}</div>
-            <div class="email-body">${escapeHtml(body)}</div>
-            <div class="email-sent-badge">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
-              Sent to ${escapeHtml(f.email)}
-            </div>
-          </div>
-        </div>`;
-      }
-
-      function sendConfirmationEmail() {
-        assignAccountManager();
-        app.emailSent = true;
-        app.phase = "complete";
-        app.statusLevel = 3;
-        return {
-          tool: "send_confirmation_email",
-          text: `All done — I've sent a confirmation email to ${app.fields.email} with your application details and your account manager's contact information. ${app.accountManager.name} will be in touch within one working day.`,
-          widget: "email",
-        };
-      }
-
-      function submittedWidget() {
-        return `<div class="widget" data-widget="submitted">
-          <div class="widget-header"><span class="widget-title">${app.emailSent ? "Application complete" : "Application submitted"}</span><span class="widget-brand">iwoca</span></div>
-          <div class="widget-body">
-            <div class="field"><span class="field-label">Reference</span><div class="ref-pill">${app.reference}</div></div>
-            ${statusStepsHtml()}
-            ${app.emailSent ? fileListHtml() : uploadZoneHtml()}
-          </div></div>`;
-      }
-
-      function statusWidget() {
-        return `<div class="widget" data-widget="status">
-          <div class="widget-header"><span class="widget-title">Application ${app.reference}</span><span class="widget-brand">iwoca</span></div>
-          <div class="widget-body">
-            <div class="field"><span class="field-label">${escapeHtml(app.fields.companyName)}</span>
-              <span class="field-value amount">${formatGbp(app.fields.amountRequested)} requested</span></div>
-            ${statusStepsHtml()}
-            ${app.statusLevel >= 2 ? uploadZoneHtml() : ""}
-            ${app.uploadedFiles.length ? fileListHtml() : ""}
-          </div></div>`;
-      }
-
-      function toolLabel(name) {
-        return {
-          apply_for_business_finance: "iwoca",
-          check_application_status: "iwoca",
-          upload_documents: "iwoca",
-          send_confirmation_email: "iwoca",
-        }[name] || name;
-      }
-
-      function renderMessage(data) {
-        const row = document.createElement("div");
-        row.className = `message-row ${data.role}`;
-
-        let widgetHtml = "";
-        if (data.widget === "email") widgetHtml = emailWidget();
-        if (data.widget === "companiesHouse") widgetHtml = companiesHouseWidget();
-        if (data.widget === "suggestions") widgetHtml = suggestionsWidget();
-        if (data.widget === "summary") widgetHtml = summaryWidget();
-        if (data.widget === "submitted") widgetHtml = submittedWidget();
-        if (data.widget === "status") widgetHtml = statusWidget();
-
-        let toolHtml = "";
-        if (data.tool) {
-          toolHtml = `<div class="tool-chip">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>
-            Used ${toolLabel(data.tool)}
-          </div>`;
+        function compute() {
+          var amount = clamp(Number(card.querySelector(".lc-amount").value) || 0, 0, 1000000);
+          var i = s.rate / 100;
+          var pay = monthlyPayment(amount, i, s.term);
+          var interest = pay * s.term - amount;
+          var pct = feePct(s.term), fee = amount * (pct / 100);
+          card.querySelector(".lc-results").innerHTML =
+            '<div class="res"><span class="k">Monthly repayment</span><span class="v">' + gbp(pay) + "</span></div>" +
+            '<div class="res"><span class="k">Total interest</span><span class="v">' + gbp(interest) + "</span></div>" +
+            (fee > 0 ? '<div class="res"><span class="k">Additional fee (' + pct + '%)</span><span class="v">' + gbp(fee) + "</span></div>" : "") +
+            '<div class="res big"><span class="k">Total repayable</span><span class="v">' + gbp(pay * s.term + fee) + "</span></div>" +
+            '<p class="hint">Interest is charged on your outstanding balance, so each repayment\'s interest is a little lower than the last.</p>';
+          if (s.early) {
+            var days = clamp(Math.round((Number(card.querySelector(".lc-earlyn").value) || 0) * s.earlyUnit), 1, s.term * DAYS_PER_MONTH);
+            var e = earlySettle(amount, i, pay, days);
+            card.querySelector(".lc-earlyres").innerHTML =
+              '<div class="res"><span class="k">Days until repaid</span><span class="v">' + days + " days</span></div>" +
+              '<div class="res"><span class="k">Interest for those days</span><span class="v">' + gbp(e.interest) + "</span></div>" +
+              (fee > 0 ? '<div class="res"><span class="k">Additional fee (' + pct + '%)</span><span class="v">' + gbp(fee) + "</span></div>" : "") +
+              '<div class="res big"><span class="k">Total repayable</span><span class="v">' + gbp(e.total + fee) + "</span></div>" +
+              '<div class="res"><span class="k">You save (interest)</span><span class="v" style="color:var(--iwoca-red)">' + gbp(interest - e.interest) + "</span></div>";
+          }
+          scrollDown();
         }
 
-        const bodyHtml = data.html || `<p>${escapeHtml(data.text).replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>")}</p>`;
+        card.querySelector(".lc-amount").addEventListener("input", compute);
+        card.querySelector(".lc-rate").addEventListener("input", function (e) {
+          s.rate = Number(e.target.value);
+          card.querySelector(".lc-rateval").textContent = s.rate;
+          compute();
+        });
+        card.querySelectorAll(".term-btn").forEach(function (b) {
+          b.addEventListener("click", function () {
+            s.term = Number(b.dataset.term);
+            card.querySelectorAll(".term-btn").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+            compute();
+          });
+        });
+        card.querySelector(".lc-early-yes").addEventListener("click", function () {
+          s.early = true;
+          card.querySelector(".lc-early-yes").setAttribute("aria-pressed", "true");
+          card.querySelector(".lc-early-no").setAttribute("aria-pressed", "false");
+          card.querySelector(".lc-early").className = "lc-early";
+          compute();
+        });
+        card.querySelector(".lc-early-no").addEventListener("click", function () {
+          s.early = false;
+          card.querySelector(".lc-early-yes").setAttribute("aria-pressed", "false");
+          card.querySelector(".lc-early-no").setAttribute("aria-pressed", "true");
+          card.querySelector(".lc-early").className = "lc-early hidden";
+          compute();
+        });
+        card.querySelector(".lc-earlyn").addEventListener("input", compute);
+        card.querySelector(".lc-earlyu").addEventListener("change", function (e) { s.earlyUnit = Number(e.target.value); compute(); });
 
-        if (data.role === "user") {
-          row.innerHTML = `<div class="message-inner">
-            <div class="message-content"><div class="message-text">${bodyHtml}</div></div>
-            <div class="avatar user">${userInitials}</div>
-          </div>`;
+        compute();
+        scrollDown();
+      }
+
+      /* ================= intent matching ================= */
+      function respond(text) {
+        var t = text.toLowerCase();
+        if (/(compass|score|estimate|eligib.*rate|qualify|how.*(would|do).*look|my rate|indicative)/.test(t)) {
+          botMsg("Happy to give you a rough feel. This is the <b>Credit Compass</b> — a demo estimate using fake illustrative logic (no real iwoca data), so treat the result as a conversation starter, not a decision.");
+          setTimeout(compassCard, 700);
+        } else if (/(calculat|cost|repay|monthly payment|what would.*loan|price)/.test(t)) {
+          botMsg("Here's the <b>loan calculator</b>" + (lastRate ? ", prefilled with your rough rate of ~" + lastRate.mid + "%/month" : " — it starts at iwoca's representative 3.3%/month") + ". Every rate here is an estimate, not a guarantee.");
+          setTimeout(function () { calculatorCard(lastRate ? lastRate.mid : 3.3); }, 700);
+        } else if (/(how (does|do).*work|how it works|process|how to apply|application process)/.test(t)) {
+          botMsg(K.how);
+        } else if (/(use (it|funding|the (money|funds))|use case|what.*(use|for)\b|spend|purposes?)/.test(t)) {
+          botMsg(K.uses);
+        } else if (/(compare|vs\b|versus|bank|difference|better than|other lender|competitor)/.test(t)) {
+          botMsg(K.compare);
+        } else if (/(review|testimon|trustpilot|customer|clients? say|feedback|stories|reputation)/.test(t)) {
+          botMsg(K.reviews);
+        } else if (/(rate|interest|fee|charge|apr|pricing)/.test(t)) {
+          botMsg(K.rates);
+        } else if (/(product|flexi|iwocapay|pay later|types? of (loan|finance))/.test(t)) {
+          botMsg(K.products);
+        } else if (/(who can|eligible|eligibility|sole trader|limited company|requirements?|criteria)/.test(t)) {
+          botMsg(K.eligibility);
+        } else if (/(apply|application|exact rate|sign ?up|get started)/.test(t)) {
+          botMsg(K.apply);
+        } else if (/^(hi|hello|hey)\b/.test(t)) {
+          botMsg(K.welcome);
         } else {
-          row.innerHTML = `<div class="message-inner">
-            <div class="avatar assistant">${OPENAI_LOGO}</div>
-            <div class="message-content">
-              ${toolHtml}<div class="message-text">${bodyHtml}</div>${widgetHtml}
-            </div>
-          </div>`;
+          botMsg(K.fallback);
         }
-
-        messagesEl.appendChild(row);
-        bindWidgetActions(row);
-        chatArea.scrollTop = chatArea.scrollHeight;
-        return row;
       }
 
-      function refreshWidgets() {
-        document.querySelectorAll("[data-widget='submitted'], [data-widget='status']").forEach((widget) => {
-          const type = widget.dataset.widget;
-          const parent = widget.parentElement;
-          const temp = document.createElement("div");
-          temp.innerHTML = type === "submitted" ? submittedWidget() : statusWidget();
-          parent.replaceChild(temp.firstElementChild, widget);
-          bindWidgetActions(parent);
-        });
-      }
-
-      function bindWidgetActions(root) {
-        root.querySelectorAll("[data-action]").forEach((el) => {
-          el.addEventListener("click", (e) => {
-            const action = el.dataset.action;
-            if (action === "upload") { e.stopPropagation(); openFilePicker("widget"); return; }
-            if (action === "confirm-ch") handleUserInput("Yes, that's correct.");
-            if (action === "reject-ch") handleUserInput("No, that's not my company.");
-            if (action === "suggestion-iwoca") handleUserInput("I'd like to apply with iwoca.");
-            if (action === "suggestion-bank") handleUserInput("Tell me more about the bank loan option.");
-            if (action === "suggestion-startup") handleUserInput("What about Start Up Loans?");
-            if (action === "suggestion-compare") handleUserInput("How do comparison sites work?");
-            if (action === "submit") handleUserInput("Yes, please submit it.");
-            if (action === "edit") handleUserInput("I'd like to edit my details.");
-          });
-        });
-
-        root.querySelectorAll(".upload-zone").forEach((zone) => {
-          zone.addEventListener("dragover", (e) => { e.preventDefault(); zone.classList.add("dragover"); });
-          zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
-          zone.addEventListener("drop", (e) => {
-            e.preventDefault();
-            zone.classList.remove("dragover");
-            if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
-          });
-        });
-      }
-
-      function openFilePicker(source) {
-        if (app.phase !== "submitted" && app.statusLevel < 2) {
-          if (app.phase === "submitted") {
-            app.statusLevel = 2;
-            refreshWidgets();
-          } else {
-            renderMessage({ role: "assistant", text: "You can upload documents once your application has been submitted. Finish the application first, or ask for the status to see if documents are needed." });
-            return;
-          }
-        }
-        uploadTarget = source;
-        fileInput.click();
-      }
-
-      async function handleFiles(fileList) {
-        const files = Array.from(fileList);
-        if (!files.length) return;
-
-        if (app.phase !== "submitted" && app.statusLevel < 2) {
-          renderMessage({ role: "assistant", text: "Documents can be uploaded once your iwoca application is submitted and documents have been requested." });
-          return;
-        }
-
-        app.statusLevel = Math.max(app.statusLevel, 2);
-
-        const names = files.map((f) => f.name).join(", ");
-        renderMessage({ role: "user", text: `Uploaded: ${names}` });
-
-        busy = true;
-        showTyping();
-
-        for (let i = 0; i <= 100; i += 20) {
-          await delay(120);
-        }
-
-        removeTyping();
-        files.forEach((f) => {
-          app.uploadedFiles.push({ name: f.name, size: f.size });
-        });
-
-        refreshWidgets();
-
-        renderMessage({
-          role: "assistant",
-          tool: "upload_documents",
-          text: `Received ${files.length} document${files.length > 1 ? "s" : ""}. I'll send your confirmation email now.`,
-          widget: app.phase === "submitted" ? "submitted" : "status",
-        });
-
-        showTyping();
-        await delay(900);
-        removeTyping();
-
-        renderMessage({ role: "assistant", ...sendConfirmationEmail() });
-        refreshWidgets();
-
-        busy = false;
-        updateSendButton();
-      }
-
-      function showTyping() {
-        const row = document.createElement("div");
-        row.className = "message-row assistant";
-        row.id = "typing-indicator";
-        row.innerHTML = `<div class="message-inner">
-          <div class="avatar assistant">${OPENAI_LOGO}</div>
-          <div class="message-content"><div class="typing"><span></span><span></span><span></span></div></div>
-        </div>`;
-        messagesEl.appendChild(row);
-        chatArea.scrollTop = chatArea.scrollHeight;
-      }
-
-      function removeTyping() {
-        document.getElementById("typing-indicator")?.remove();
-      }
-
-      function buildCollectingResponse() {
-        if (app.fields.companyName && !app.companiesHouseConfirmed) {
-          return startCompaniesHouseConfirm();
-        }
-        const missing = missingFields();
-        if (!missing.length) {
-          app.phase = "summary";
-          updateUserInitials();
-          if (app.fields.companyName) chatTitle.textContent = `${app.fields.companyName} funding`;
-          return {
-            tool: "apply_for_business_finance",
-            text: `Thanks ${app.fields.firstName} — I've put together your application. Please review the summary below and let me know if everything looks right.`,
-            widget: "summary",
-          };
-        }
-        const next = missing[0];
-        app.pendingField = next;
-        if (missing.length === FIELD_ORDER.length) {
-          return { text: `Great — I've connected iwoca. We can complete your application right here in chat.\n\nTo begin, could you share ${FIELD_PROMPTS[next]}?` };
-        }
-        if (missing.length > 1) {
-          const prompt = next === "companyName"
-            ? "What's your company's registered name, as it appears on Companies House?"
-            : `Got it. Could you share ${FIELD_PROMPTS[next]}?`;
-          return { text: `${prompt}\n\n(${missing.length - 1} more detail${missing.length > 2 ? "s" : ""} after that.)` };
-        }
-        if (next === "companyName") {
-          return { text: "What's your company's registered name, as it appears on Companies House?" };
-        }
-        return { text: `Got it. Could you share ${FIELD_PROMPTS[next]}?` };
-      }
-
-      function submitApplication() {
-        app.reference = `IW-${100040 + Math.floor(Math.random() * 900)}`;
-        app.phase = "submitted";
-        app.statusLevel = 0;
-        return {
-          tool: "apply_for_business_finance",
-          text: `Done — your application is in. Thanks ${app.fields.firstName}, an iwoca specialist will pick it up shortly. Here's your reference. You can upload supporting documents below when ready.`,
-          widget: "submitted",
-        };
-      }
-
-      function checkStatus() {
-        if (app.statusLevel < 2) app.statusLevel += 1;
-        const statusText = app.statusLevel === 1
-          ? "Your application is currently under review. No action needed from you yet — I'll let you know when documents are requested."
-          : "Documents are now requested. Upload bank statements and accounts using the upload area below — you can drag files in or click to browse.";
-        return { tool: "check_application_status", text: statusText, widget: "status" };
-      }
-
-      function processMessage(text) {
-        const trimmed = text.trim();
-        if (!trimmed) return null;
-
-        if (app.phase === "complete") {
-          return {
-            text: `Your application is complete. A confirmation email has been sent to ${app.fields.email}, and ${app.accountManager?.name || "your account manager"} will contact you within one working day. Your reference is ${app.reference}.`,
-          };
-        }
-
-        if (app.phase === "submitted" && isStatusIntent(trimmed)) return checkStatus();
-
-        if (app.phase === "summary") {
-          if (isEditIntent(trimmed)) {
-            app.phase = "collecting";
-            app.pendingField = null;
-            return { text: "No problem — tell me what you'd like to change, or share the updated details." };
-          }
-          if (isConfirmIntent(trimmed)) return submitApplication();
-          return { text: 'Please review the summary above. Say "submit" when you\'re happy to proceed, or tell me what to change.' };
-        }
-
-        if (app.phase === "submitted") {
-          if (/upload|document|statement/i.test(trimmed)) {
-            app.statusLevel = Math.max(app.statusLevel, 2);
-            return { text: "Use the upload area in your application card — click it or drag files in. PDFs, bank statements, and accounts all work.", widget: "submitted" };
-          }
-          return { text: `Your reference is ${app.reference}. Ask "what's the status?" to check progress, or upload documents using the card above.` };
-        }
-
-        if (app.phase === "discover") {
-          if (isIwocaChoice(trimmed)) { connectIwoca(); extractFields(trimmed); return buildCollectingResponse(); }
-          if (/bank|high street/i.test(trimmed)) return { text: "High street banks offer secured or unsecured business loans with fixed repayments. You'll usually need 2–3 years of accounts, a business plan, and a good credit history. The process can take several weeks. You apply through your bank's website or branch.", widget: "suggestions" };
-          if (/start up|startup/i.test(trimmed)) return { text: "Start Up Loans are government-backed — up to £25,000 per owner, capped at £100,000 per business, with free mentoring. They're aimed at businesses trading less than three years. Applications are made through the Start Up Loans website.", widget: "suggestions" };
-          if (/compar|swoop|funding options/i.test(trimmed)) return { text: "Comparison sites let you enter your business details once and see offers from multiple lenders side by side. Useful for shopping around, though you'll still apply on each lender's own site.", widget: "suggestions" };
-          if (isFundingIntent(trimmed)) return openingAssistantResponse();
-          return { text: "I can walk you through any of the options above — just say which one interests you, or ask for more detail.", widget: "suggestions" };
-        }
-
-        if (app.phase === "enterCompaniesHouseNumber") {
-          const number = parseCompaniesHouseNumber(trimmed);
-          if (!number) {
-            return { text: "I need the Companies House number — it's usually 8 digits. You can copy it from your certificate of incorporation or from the Companies House website." };
-          }
-          app.fields.companiesHouseNumber = number;
-          app.fields.companyName = mockCompanyNameFromNumber(number);
-          return startCompaniesHouseConfirm(true);
-        }
-
-        if (app.phase === "confirmCompaniesHouse") {
-          if (isConfirmIntent(trimmed)) {
-            app.companiesHouseConfirmed = true;
-            app.phase = "collecting";
-            app.pendingField = null;
-            return buildCollectingResponse();
-          }
-          if (isRejectIntent(trimmed)) {
-            return askForCompaniesHouseNumber();
-          }
-          return { text: "Please confirm the Companies House details above, or say if it's not your company." };
-        }
-
-        if (app.phase === "collecting") {
-          extractFields(trimmed);
-          if (!app.pendingField) {
-            const missing = missingFields();
-            if (missing.length) app.pendingField = missing[0];
-          }
-          if (app.pendingField && !app.fields[app.pendingField]) assignFieldValue(app.pendingField, trimmed);
-          const stillMissing = missingFields();
-          if (app.pendingField && stillMissing.includes(app.pendingField)) {
-            const retry = app.pendingField === "companyName"
-              ? "I didn't quite catch that — what's the registered company name on Companies House?"
-              : `I didn't quite catch that — could you share ${FIELD_PROMPTS[app.pendingField]}?`;
-            return { text: retry };
-          }
-          if (app.fields.companyName && !app.companiesHouseConfirmed) {
-            return startCompaniesHouseConfirm();
-          }
-          return buildCollectingResponse();
-        }
-
-        return { text: "I'm here to help with iwoca business finance. What would you like to do?" };
-      }
-
-      async function respondToUser(text) {
-        busy = true;
-        sendBtn.disabled = true;
-        showTyping();
-        await delay(600 + Math.random() * 400);
-        removeTyping();
-        const response = processMessage(text);
-        if (response) renderMessage({ role: "assistant", ...response });
-        busy = false;
-        updateSendButton();
-        composerInput.focus();
-      }
-
-      async function handleUserInput(text) {
-        if (busy || !text.trim()) return;
-        const trimmed = text.trim();
-        composerInput.value = "";
-        autoResizeComposer();
-        updateSendButton();
-        renderMessage({ role: "user", text: trimmed });
-        await respondToUser(trimmed);
-      }
-
-      function delay(ms) { return new Promise((r) => setTimeout(r, ms)); }
-
-      function autoResizeComposer() {
-        composerInput.style.height = "auto";
-        composerInput.style.height = `${Math.min(composerInput.scrollHeight, 160)}px`;
-      }
-
-      function updateSendButton() {
-        const hasText = composerInput.value.trim().length > 0;
-        sendBtn.disabled = !hasText || busy;
-        sendBtn.classList.toggle("active", hasText && !busy);
-      }
-
-      function resetChat() {
-        busy = false;
-        userInitials = "You";
-        app.phase = "discover";
-        app.iwocaConnected = false;
-        app.reference = null;
-        app.statusLevel = 0;
-        app.companiesHouseConfirmed = false;
-        app.pendingField = null;
-        app.uploadedFiles = [];
-        app.accountManager = null;
-        app.emailSent = false;
-        Object.keys(app.fields).forEach((k) => { app.fields[k] = null; });
-        messagesEl.innerHTML = "";
-        chatTitle.textContent = "New chat";
-        connectorBadge.classList.add("hidden");
-        composerInput.value = "";
-        fileInput.value = "";
-        autoResizeComposer();
-        updateSendButton();
-        composerInput.focus();
-      }
-
-      sendBtn.addEventListener("click", () => handleUserInput(composerInput.value));
-      attachBtn.addEventListener("click", () => openFilePicker("composer"));
-      fileInput.addEventListener("change", () => {
-        if (fileInput.files.length) handleFiles(fileInput.files);
-        fileInput.value = "";
+      /* ================= chips + input ================= */
+      var CHIPS = [
+        "How does iwoca work?",
+        "What can I use funding for?",
+        "How do you compare to banks?",
+        "What do customers say?",
+        "What are the rates?",
+        "Estimate my business",
+        "Show the calculator",
+        "Who's eligible?",
+        "How do I apply?",
+      ];
+      var chips = document.getElementById("chips");
+      CHIPS.forEach(function (c) {
+        var b = document.createElement("button");
+        b.className = "chip"; b.type = "button"; b.textContent = c;
+        b.addEventListener("click", function () { userMsg(c); respond(c); });
+        chips.appendChild(b);
       });
-      composerInput.addEventListener("input", () => { autoResizeComposer(); updateSendButton(); });
-      composerInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) handleUserInput(composerInput.value); }
-      });
-      resetBtn.addEventListener("click", resetChat);
-      newChatBtn.addEventListener("click", resetChat);
 
-      resetChat();
+      var input = document.getElementById("input");
+      function send() {
+        var v = input.value.trim();
+        if (!v) return;
+        input.value = "";
+        userMsg(v);
+        respond(v);
+      }
+      document.getElementById("send").addEventListener("click", send);
+      input.addEventListener("keydown", function (e) { if (e.key === "Enter") send(); });
+
+      botMsg(K.welcome, 200);
     </script>
   </body>
 </html>
