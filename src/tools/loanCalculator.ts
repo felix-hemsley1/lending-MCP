@@ -6,12 +6,14 @@ import { loanCalculatorToolMeta } from "../appsSdk.js";
  *
  * Method (illustrative, transparent):
  *  - The chosen term is a standard amortising schedule of equal monthly
- *    repayments, computed with the annuity formula at the monthly rate. Because a
- *    30-day month at (monthly rate ÷ 30) per day equals the monthly rate, this is
- *    consistent with "interest calculated daily" on the outstanding balance.
- *  - Repaying early settles the outstanding balance on the chosen day. Interest is
- *    accrued daily up to that day only, so you save the remaining interest — with
- *    no early-repayment fee.
+ *    repayments (annuity formula at the monthly rate). Interest each month is
+ *    charged on the OUTSTANDING balance, so as the balance falls the interest
+ *    portion of each repayment gets a little smaller.
+ *  - Repaying early settles the outstanding balance on the chosen day; interest is
+ *    accrued daily up to that day only, so you save the remaining interest — no
+ *    early-repayment fee.
+ *  - Borrowing over 12 months may incur an additional fee: typically 5% of the
+ *    amount for 13-24 months and 6% for longer (illustrative figures).
  *
  * This is a clearly-labelled ESTIMATE, not a quote or offer. The rate slider range
  * (1.5%-5.7% per month) is illustrative, not a published iwoca rate band; iwoca's
@@ -30,12 +32,13 @@ const DAYS_PER_MONTH = 30; // iwoca quotes interest "per 30 days"
 
 const DISCLAIMER =
   "Illustrative estimate only — not a quote, an offer, or a financial promotion " +
-  "from iwoca. Interest is calculated daily on the outstanding balance at (monthly " +
-  "rate ÷ 30) per day. The term shows a standard schedule of equal monthly " +
-  "repayments; because interest accrues daily, repaying early (no fees) means you " +
-  "only pay interest up to the day you settle, saving the rest. The rate is one you " +
+  "from iwoca. Interest is charged daily on the outstanding balance ((monthly rate " +
+  "÷ 30) per day), so with equal monthly repayments the interest part of each " +
+  "payment falls over time. Borrowing over 12 months may incur an additional fee " +
+  "(typically 5% of the amount for 13-24 months, 6% for longer). Repaying early has " +
+  "no fee — you only pay interest up to the day you settle. The rate is one you " +
   "choose for illustration (iwoca's representative example is ~3.33% per 30 days, " +
-  "~49% APR representative); actual rates and repayments depend on iwoca's assessment.";
+  "~49% APR representative); actual rates, fees and repayments depend on iwoca's assessment.";
 
 export const loanCalculatorDefinition = {
   name: "loan_calculator",
@@ -43,9 +46,10 @@ export const loanCalculatorDefinition = {
   description:
     "Estimate what an iwoca loan could cost. Choose an amount, a monthly interest " +
     "rate (illustrative, 1.5%-5.7% per month), and a term (12, 24, 48 or 60 months) " +
-    "to see the monthly repayment schedule. Interest is calculated daily, so if you " +
-    "plan to repay early (no fees), pass repay_early with early_repayment_days to see " +
-    "the lower cost and the interest saved. Returns an illustrative estimate plus a disclaimer.",
+    "to see the monthly repayment schedule. Interest is charged on the reducing " +
+    "balance and borrowing over 12 months may add a fee. If you plan to repay early " +
+    "(no fees), pass repay_early with early_repayment_days to see the lower cost and " +
+    "the interest saved. Returns an illustrative estimate plus a disclaimer.",
   annotations: {
     readOnlyHint: true,
     openWorldHint: false,
@@ -120,16 +124,44 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+/** Additional fee for borrowing over 12 months (illustrative, percent). */
+function feePct(term: number): number {
+  if (term <= 12) return 0;
+  if (term <= 24) return 5;
+  return 6;
+}
+
 /** Equal monthly repayment for an amortising loan (annuity formula). */
 function monthlyPayment(principal: number, monthlyRate: number, term: number): number {
   if (monthlyRate === 0) return principal / term;
   return (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -term));
 }
 
+/** Interest charged in the first and final month (shows the declining trend). */
+function firstAndFinalInterest(
+  principal: number,
+  monthlyRate: number,
+  payment: number,
+  term: number,
+) {
+  let balance = principal;
+  let first = 0;
+  let final = 0;
+  for (let m = 0; m < term && balance > 0; m++) {
+    const interest = balance * monthlyRate;
+    if (m === 0) first = interest;
+    final = interest;
+    balance = balance + interest - payment;
+    if (balance < 0) balance = 0;
+  }
+  return { first, final };
+}
+
 /**
  * Cost of settling early after `days`. Simulates the amortising schedule for the
  * whole months elapsed, then accrues daily interest on the remaining balance for
- * the leftover days. Returns total interest actually paid and total repaid.
+ * the leftover days. Returns total interest actually paid and amount repaid
+ * (excluding any term fee).
  */
 function earlySettlement(
   principal: number,
@@ -175,8 +207,10 @@ export async function handleLoanCalculator(rawArgs: unknown) {
   const i = monthly_rate_pct / 100;
   const dailyRate = i / DAYS_PER_MONTH;
   const payment = monthlyPayment(amount_gbp, i, term_months);
-  const fullTotal = payment * term_months;
-  const fullInterest = fullTotal - amount_gbp;
+  const fullInterest = payment * term_months - amount_gbp;
+  const fee = amount_gbp * (feePct(term_months) / 100);
+  const fullTotal = payment * term_months + fee;
+  const { first, final } = firstAndFinalInterest(amount_gbp, i, payment, term_months);
 
   const structuredContent: Record<string, unknown> = {
     amount_gbp,
@@ -186,14 +220,20 @@ export async function handleLoanCalculator(rawArgs: unknown) {
     full_term: {
       monthly_repayment_gbp: round2(payment),
       interest_gbp: round2(fullInterest),
+      first_month_interest_gbp: round2(first),
+      final_month_interest_gbp: round2(final),
+      fee_pct: feePct(term_months),
+      fee_gbp: round2(fee),
       total_repayable_gbp: round2(fullTotal),
     },
     disclaimer: DISCLAIMER,
   };
 
+  const feeNote = fee > 0 ? `, plus a ${feePct(term_months)}% fee (£${round2(fee).toLocaleString("en-GB")})` : "";
   const lines = [
     `Illustrative cost for £${amount_gbp.toLocaleString("en-GB")} at ${monthly_rate_pct}%/month over ${term_months} months:`,
-    `- Full term: £${round2(payment).toLocaleString("en-GB")}/month, interest £${round2(fullInterest).toLocaleString("en-GB")}, total repayable £${round2(fullTotal).toLocaleString("en-GB")}`,
+    `- Full term: £${round2(payment).toLocaleString("en-GB")}/month, interest £${round2(fullInterest).toLocaleString("en-GB")}${feeNote}, total repayable £${round2(fullTotal).toLocaleString("en-GB")}`,
+    `- Interest falls each month as the balance reduces (£${round2(first).toLocaleString("en-GB")} in month 1 → £${round2(final).toLocaleString("en-GB")} in the final month).`,
   ];
 
   if (repay_early && early_repayment_days !== undefined) {
@@ -203,15 +243,17 @@ export async function handleLoanCalculator(rawArgs: unknown) {
       payment,
       early_repayment_days,
     );
+    const earlyTotal = totalRepaid + fee;
     const saving = fullInterest - interestPaid;
     structuredContent.early_repayment = {
       days: early_repayment_days,
       interest_gbp: round2(interestPaid),
-      total_repayable_gbp: round2(totalRepaid),
+      fee_gbp: round2(fee),
+      total_repayable_gbp: round2(earlyTotal),
       saving_vs_full_term_gbp: round2(saving),
     };
     lines.push(
-      `- Repaid early after ${early_repayment_days} day(s): interest £${round2(interestPaid).toLocaleString("en-GB")}, total repayable £${round2(totalRepaid).toLocaleString("en-GB")} — saving £${round2(saving).toLocaleString("en-GB")} vs full term (no early-repayment fee)`,
+      `- Repaid early after ${early_repayment_days} day(s): interest £${round2(interestPaid).toLocaleString("en-GB")}${feeNote}, total repayable £${round2(earlyTotal).toLocaleString("en-GB")} — saving £${round2(saving).toLocaleString("en-GB")} of interest vs full term (no early-repayment fee)`,
     );
   }
 

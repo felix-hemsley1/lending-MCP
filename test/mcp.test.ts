@@ -158,6 +158,43 @@ test("loan_calculator returns a full-term cost plus a disclaimer", async () => {
   assert.match(sc.disclaimer, /daily/i);
 });
 
+test("loan_calculator charges interest on the reducing balance (declining per month)", async () => {
+  const client = await connectClient();
+  const result = await client.callTool({
+    name: "loan_calculator",
+    arguments: { amount_gbp: 50_000, monthly_rate_pct: 3.3, term_months: 24 },
+  });
+  const sc = result.structuredContent as {
+    full_term: { first_month_interest_gbp: number; final_month_interest_gbp: number };
+  };
+  // Interest on the outstanding balance means month 1 > final month.
+  assert.ok(
+    sc.full_term.first_month_interest_gbp > sc.full_term.final_month_interest_gbp,
+    "interest should fall as the balance reduces",
+  );
+});
+
+test("loan_calculator applies the over-12-month term fee (5% / 6%)", async () => {
+  const client = await connectClient();
+  async function feeFor(term: number) {
+    const r = await client.callTool({
+      name: "loan_calculator",
+      arguments: { amount_gbp: 50_000, monthly_rate_pct: 3.3, term_months: term },
+    });
+    return (r.structuredContent as { full_term: { fee_pct: number; fee_gbp: number } })
+      .full_term;
+  }
+  const t12 = await feeFor(12);
+  assert.equal(t12.fee_pct, 0);
+  assert.equal(t12.fee_gbp, 0);
+  const t24 = await feeFor(24);
+  assert.equal(t24.fee_pct, 5);
+  assert.equal(t24.fee_gbp, 2_500);
+  const t48 = await feeFor(48);
+  assert.equal(t48.fee_pct, 6);
+  assert.equal(t48.fee_gbp, 3_000);
+});
+
 test("loan_calculator computes daily-interest early repayment with a saving", async () => {
   const client = await connectClient();
 

@@ -7,7 +7,7 @@
     <style>
       :root {
         color-scheme: light;
-        --bg: #eef2f9;
+        --bg: #f7f9fd;
         --card: #e0eafb;
         --card-border: #c6d6f1;
         --fg: #14171d;
@@ -66,6 +66,14 @@
       .saving { color: var(--iwoca-red); font-weight: 800; }
       .disclaimer { margin-top: 12px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--card-border); padding-top: 10px; line-height: 1.5; }
       .hint { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+      .sched-wrap { max-height: 220px; overflow-y: auto; margin-top: 10px; border: 1px solid var(--card-border); border-radius: 8px; background: #fff; }
+      table.sched { width: 100%; border-collapse: collapse; font-size: 12px; }
+      table.sched th, table.sched td { padding: 6px 10px; text-align: right; }
+      table.sched th:first-child, table.sched td:first-child { text-align: left; }
+      table.sched thead th { position: sticky; top: 0; background: #fff; color: var(--muted); font-weight: 700; border-bottom: 1px solid var(--card-border); }
+      table.sched td { color: var(--fg); border-bottom: 1px solid #eef2fb; }
+      table.sched td.int { color: var(--iwoca-red); font-weight: 700; }
+      table.sched tr:last-child td { border-bottom: none; }
     </style>
   </head>
   <body>
@@ -105,7 +113,21 @@
         <label>Your repayment schedule (full term)</label>
         <div class="result"><span class="k">Monthly repayment</span><span class="v" id="monthly">–</span></div>
         <div class="result"><span class="k">Total interest</span><span class="v" id="fullInterest">–</span></div>
+        <div class="result hidden" id="feeRow"><span class="k" id="feeLabel">Additional fee</span><span class="v" id="feeVal">–</span></div>
         <div class="result big"><span class="k">Total repayable</span><span class="v" id="fullTotal">–</span></div>
+      </div>
+
+      <div class="card">
+        <label>Monthly breakdown</label>
+        <p class="hint" style="margin-top:0">Interest is charged on your outstanding balance, so each repayment's interest is a little lower than the last.</p>
+        <div class="sched-wrap">
+          <table class="sched">
+            <thead>
+              <tr><th>Mo.</th><th>Interest</th><th>Principal</th><th>Balance</th></tr>
+            </thead>
+            <tbody id="scheduleBody"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="card">
@@ -127,8 +149,9 @@
           <div style="margin-top:12px">
             <div class="result"><span class="k">Days until repaid</span><span class="v" id="earlyDays">–</span></div>
             <div class="result"><span class="k">Interest for those days</span><span class="v" id="earlyInterest">–</span></div>
+            <div class="result hidden" id="earlyFeeRow"><span class="k" id="earlyFeeLabel">Additional fee</span><span class="v" id="earlyFeeVal">–</span></div>
             <div class="result big"><span class="k">Total repayable</span><span class="v" id="earlyTotal">–</span></div>
-            <div class="result"><span class="k">You save vs full term</span><span class="v saving" id="earlySaving">–</span></div>
+            <div class="result"><span class="k">You save (interest) vs full term</span><span class="v saving" id="earlySaving">–</span></div>
           </div>
         </div>
       </div>
@@ -140,10 +163,12 @@
       var DAYS_PER_MONTH = 30;
       var DEFAULT_DISCLAIMER =
         "Illustrative estimate only — not a quote, an offer, or a financial promotion from iwoca. " +
-        "Interest is calculated daily on the amount drawn at (monthly rate / 30) per day; repaying " +
-        "early assumes a single lump-sum repayment, so you only pay interest for the days used, with " +
-        "no early-repayment fee. The rate is one you choose for illustration (iwoca's representative " +
-        "example is ~3.33% per 30 days); actual rates and repayments depend on iwoca's assessment.";
+        "Interest is charged daily on the outstanding balance ((monthly rate / 30) per day), so with " +
+        "equal monthly repayments the interest part of each payment falls over time. Borrowing over " +
+        "12 months may incur an additional fee (typically 5% of the amount for 13-24 months, 6% for " +
+        "longer). Repaying early has no fee — you only pay interest up to the day you settle. The rate " +
+        "is one you choose for illustration (iwoca's representative example is ~3.33% per 30 days); " +
+        "actual rates, fees and repayments depend on iwoca's assessment.";
 
       var state = { amount: 50000, rate: 3.3, term: 24, early: false, earlyN: 3, earlyUnit: 7 };
 
@@ -183,10 +208,27 @@
         document.getElementById("earlyUnit").value = String(state.earlyUnit);
       }
 
+      // Additional fee for borrowing over 12 months (illustrative, percent).
+      function feePct(term) { return term <= 12 ? 0 : term <= 24 ? 5 : 6; }
+
       // Equal monthly repayment for an amortising loan (annuity formula).
       function monthlyPayment(principal, i, term) {
         if (i === 0) return principal / term;
         return (principal * i) / (1 - Math.pow(1 + i, -term));
+      }
+
+      // Full amortisation schedule: interest on the reducing balance each month.
+      function schedule(principal, i, payment, term) {
+        var rows = [];
+        var balance = principal;
+        for (var m = 1; m <= term; m++) {
+          var interest = balance * i;
+          var principalPart = payment - interest;
+          balance = balance - principalPart;
+          if (balance < 0.005) balance = 0;
+          rows.push({ month: m, interest: interest, principal: principalPart, balance: balance });
+        }
+        return rows;
       }
 
       // Cost of settling early after `days`: amortise the whole months elapsed,
@@ -207,24 +249,54 @@
         return { totalRepaid: totalRepaid, interestPaid: Math.max(0, totalRepaid - principal) };
       }
 
+      function setFeeRow(rowId, labelId, valId, feeAmount, pct) {
+        var row = document.getElementById(rowId);
+        if (feeAmount > 0) {
+          row.className = "result";
+          document.getElementById(labelId).textContent = "Additional fee (" + pct + "%)";
+          document.getElementById(valId).textContent = gbp(feeAmount);
+        } else {
+          row.className = "result hidden";
+        }
+      }
+
+      function renderSchedule(rows) {
+        var body = document.getElementById("scheduleBody");
+        var html = "";
+        for (var r = 0; r < rows.length; r++) {
+          html +=
+            "<tr><td>" + rows[r].month + "</td>" +
+            '<td class="int">' + gbp(rows[r].interest) + "</td>" +
+            "<td>" + gbp(rows[r].principal) + "</td>" +
+            "<td>" + gbp(Math.max(0, rows[r].balance)) + "</td></tr>";
+        }
+        body.innerHTML = html;
+      }
+
       function compute() {
         var amount = clamp(Number(state.amount) || 0, 0, 1000000);
         var i = state.rate / 100;
         var fullDays = state.term * DAYS_PER_MONTH;
         var payment = monthlyPayment(amount, i, state.term);
-        var fullTotal = payment * state.term;
-        var fullInterest = fullTotal - amount;
+        var fullInterest = payment * state.term - amount;
+        var pct = feePct(state.term);
+        var fee = amount * (pct / 100);
+        var fullTotal = payment * state.term + fee;
 
         document.getElementById("monthly").textContent = gbp(payment);
         document.getElementById("fullInterest").textContent = gbp(fullInterest);
+        setFeeRow("feeRow", "feeLabel", "feeVal", fee, pct);
         document.getElementById("fullTotal").textContent = gbp(fullTotal);
+
+        renderSchedule(schedule(amount, i, payment, state.term));
 
         if (state.early) {
           var days = clamp(Math.round((Number(state.earlyN) || 0) * state.earlyUnit), 1, fullDays);
           var early = earlySettlement(amount, i, payment, days);
           document.getElementById("earlyDays").textContent = days + " day" + (days === 1 ? "" : "s");
           document.getElementById("earlyInterest").textContent = gbp(early.interestPaid);
-          document.getElementById("earlyTotal").textContent = gbp(early.totalRepaid);
+          setFeeRow("earlyFeeRow", "earlyFeeLabel", "earlyFeeVal", fee, pct);
+          document.getElementById("earlyTotal").textContent = gbp(early.totalRepaid + fee);
           document.getElementById("earlySaving").textContent = gbp(fullInterest - early.interestPaid);
         }
         document.getElementById("disclaimer").textContent = DEFAULT_DISCLAIMER;
