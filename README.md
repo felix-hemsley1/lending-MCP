@@ -13,10 +13,12 @@ SDK-specific glue is isolated in one module (`src/appsSdk.ts`).
 - **Read-only and stateless.** No auth, no PII, no persistence, no session state
   tied to a person. All three tools are annotated `readOnlyHint: true`,
   `openWorldHint: false`.
-- **No invented iwoca figures.** Every rate/limit/term/eligibility in
-  `data/products.json` is a `[VERIFY]` placeholder until a human replaces it with
-  verified data. The loan calculator never assumes an iwoca rate — the caller
-  supplies an illustrative rate range.
+- **No invented iwoca figures.** `data/products.json` is populated from
+  iwoca.co.uk (collected 2026-08-09 via domain-scoped search — direct site fetch
+  was egress-blocked), with a `source` provenance block and per-figure caveats;
+  anything not published as a single figure stays `[VERIFY]`. A human should
+  re-read the live pages to confirm. The loan calculator never assumes an iwoca
+  rate — the caller supplies an illustrative rate range.
 - **Credit Compass is a demo.** It is not a credit score or decision and uses no
   real iwoca data. "Demo / illustrative" wording appears in the tool description,
   the tool output, and the widget.
@@ -25,7 +27,7 @@ SDK-specific glue is isolated in one module (`src/appsSdk.ts`).
 
 | Tool | Purpose |
 | --- | --- |
-| `get_product_info` | Return public product info. `product_id: "all"` (default) or a specific id. Figures are `[VERIFY]` placeholders. |
+| `get_product_info` | Return public product info from `data/products.json` (sourced from iwoca.co.uk, with provenance + caveats). `product_id: "all"` (default) or a specific id. |
 | `loan_calculator` | Amortise an amount over a term at a caller-supplied **illustrative** annual rate range; returns low/high estimates + disclaimer. |
 | `credit_compass` | **Demo** illustrative view: score (35–90), band, 3 factors (each with a signal), `demo: true`, disclaimer. Advertises an HTML widget via the Apps SDK. |
 

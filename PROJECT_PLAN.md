@@ -56,6 +56,11 @@ so the same server can back a Claude connector.
   `window.openai.*`) may change; keep them isolated and re-verify before submission.
   (The official docs host was unreachable from the build environment when M1 was
   written — keys were confirmed against secondary sources and need human re-check.)
-- **Placeholder data.** Product figures are `[VERIFY]` and must be filled by a human.
+- **Product data provenance.** `data/products.json` was populated from iwoca.co.uk
+  on 2026-08-09 via domain-scoped web search (direct fetch was egress-blocked). It
+  carries a `source` block with URLs and caveats (representative-example total and
+  minimum-term wording vary across iwoca pages; sole-trader eligibility changed).
+  A human must re-read the live pages to confirm before submission; figures not
+  published as a single value remain `[VERIFY]`.
 - **`demo/index.html`** still depicts the earlier application-submission flow and is
   separate from the MCP server; update or retire before any public showcase.
