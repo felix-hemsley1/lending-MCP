@@ -43,6 +43,9 @@
       .saving { color: var(--iwoca-red); font-weight: 800; }
       .hidden { display: none; }
       .hint { font-size: 11px; color: var(--muted); margin: 6px 0 0; }
+      .early-row { display: flex; gap: 8px; margin-top: 8px; }
+      .early-row input { flex: 1; min-width: 0; padding: 12px; font-size: 16px; }
+      .early-row select { flex: 0 0 44%; padding: 12px 10px; border: 1px solid var(--card-border); border-radius: 8px; background: #fff; color: var(--fg); font-size: 15px; font-weight: 700; }
       .sched-wrap { max-height: 170px; overflow-y: auto; margin-top: 8px; border: 1px solid var(--card-border); border-radius: 8px; background: #fff; }
       table.sched { width: 100%; border-collapse: collapse; font-size: 11.5px; }
       table.sched th, table.sched td { padding: 5px 9px; text-align: right; }
@@ -101,9 +104,10 @@
         </div>
         <div id="earlyBlock" class="hidden">
           <p class="hint">You only pay interest for the days you use the money.</p>
-          <div style="display:flex; gap:8px; margin-top:8px">
-            <input id="earlyN" type="number" min="1" step="1" value="3" style="flex:1" />
-            <select id="earlyUnit" style="width:auto; padding:8px 10px; border:1px solid var(--card-border); border-radius:8px; background:#fff; font-weight:600">
+          <label style="margin-top:8px">Repay after</label>
+          <div class="early-row">
+            <input id="earlyN" type="number" min="1" step="1" value="3" />
+            <select id="earlyUnit">
               <option value="1">days</option><option value="7" selected>weeks</option><option value="30">months</option>
             </select>
           </div>

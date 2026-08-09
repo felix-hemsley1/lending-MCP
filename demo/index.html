@@ -53,6 +53,9 @@
       .terms { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
       .term-btn, .tgl { padding: 8px 0; border: 1px solid var(--card-border); background: #fff; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; text-align: center; color: var(--fg); }
       .tgl { flex: 1; }
+      .early-row { display: flex; gap: 8px; margin-top: 8px; }
+      .early-row input { flex: 1; min-width: 0; padding: 12px; font-size: 16px; }
+      .early-row select { flex: 0 0 44%; padding: 12px 10px; font-size: 15px; font-weight: 700; }
       .term-btn[aria-pressed="true"], .tgl[aria-pressed="true"] { background: var(--iwoca-red); color: #fff; border-color: var(--iwoca-red); }
       .res { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
       .res .k { color: var(--muted); }
@@ -305,8 +308,8 @@
           '<div class="subcard lc-results"></div>' +
           '<div style="margin-bottom:10px"><label>Repay early? <span style="font-weight:600;color:var(--muted)">(No fees.)</span></label>' +
           '<div style="display:flex;gap:6px"><button class="tgl lc-early-no" aria-pressed="true" type="button">No</button><button class="tgl lc-early-yes" aria-pressed="false" type="button">Yes</button></div>' +
-          '<div class="lc-early hidden" style="margin-top:8px"><div style="display:flex;gap:6px">' +
-          '<input type="number" class="lc-earlyn" min="1" step="1" value="3" style="flex:1" />' +
+          '<div class="lc-early hidden" style="margin-top:8px"><label style="margin-top:4px">Repay after</label><div class="early-row">' +
+          '<input type="number" class="lc-earlyn" min="1" step="1" value="3" />' +
           '<select class="lc-earlyu"><option value="1">days</option><option value="7" selected>weeks</option><option value="30">months</option></select>' +
           '</div><div class="subcard lc-earlyres" style="margin-top:8px;margin-bottom:0"></div></div></div>' +
           '<a class="btn" href="' + APPLY_URL + '" target="_blank" rel="noopener">Get an exact rate — apply with iwoca</a>' +
